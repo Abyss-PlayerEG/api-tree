@@ -1,42 +1,44 @@
+
 **API Tree CLI**
+> 📖 [中文文档](readme/Chinese.md)
 
-一个轻量级的命令行工具，用于从 OpenAPI (Swagger) 规范生成美观的终端树状图。支持从本地文件、远程服务器读取数据，并具备搜索过滤功能。
+A lightweight command-line tool that renders beautiful terminal tree diagrams from OpenAPI (Swagger) specifications. It reads data from local files or remote servers and supports keyword-based search and filtering.
 
-**✨ 特性**
-* **零依赖**：仅使用 Python 3 标准库，无需安装任何第三方包。
-* **多源支持**：支持读取本地 JSON 文件或远程 OpenAPI 服务器（默认端口 :8080）。
-* **智能搜索**：通过 `-s` 参数快速过滤包含特定关键词的接口。
-* **色彩高亮**：不同 HTTP 方法（GET, POST, PUT, DELETE 等）使用不同颜色区分。
-* **结构清晰**：自动合并单路径节点，显示接口摘要信息。
+**✨ Features**
+* **Zero Dependencies** — Uses only the Python 3 standard library. No third-party packages required.
+* **Multi-Source** — Reads local JSON files or fetches from a remote OpenAPI server (default port :8080).
+* **Smart Search** — Use the `-s` flag to quickly filter endpoints that contain a specific keyword.
+* **Color-Coded Methods** — Different HTTP methods (GET, POST, PUT, DELETE, etc.) are highlighted in distinct colors.
+* **Clean Structure** — Automatically merges single-segment path nodes and displays endpoint summaries.
 
-**🚀 快速开始**
+**🚀 Quick Start**
 
-**1. 准备工作**
-确保你的系统已安装 Python 3。
+**1. Prerequisites**
+Make sure Python 3 is installed on your system.
 
-**2. 运行脚本**
-直接运行脚本，默认连接 `http://localhost:8080`：
+**2. Run the Script**
+Run the script directly to connect to `http://localhost:8080` by default:
 `python api-tree.py`
 
-**3. 常用命令**
-* **连接指定地址**：`python api-tree.py http://localhost:9090`
-* **读取本地文件**：`python api-tree.py /path/to/openapi.json`
-* **搜索特定接口**：`python api-tree.py -s auth`
-* **查看帮助**：`python api-tree.py -h`
+**3. Common Commands**
+* **Connect to a specific server** — `python api-tree.py http://localhost:9090`
+* **Read a local file** — `python api-tree.py /path/to/openapi.json`
+* **Search for specific endpoints** — `python api-tree.py -s auth`
+* **Show help** — `python api-tree.py -h`
 
-**🛠️ 使用说明**
-该工具会自动尝试在提供的 URL 后附加 `/v3/api-docs` 路径（常见于 Springdoc OpenAPI）。如果接口文档位于根路径或其他路径，建议直接指定完整 URL。
+**🛠️ Usage Notes**
+The tool automatically appends `/v3/api-docs` to the provided URL (common with Springdoc OpenAPI). If your API documentation is served at the root path or a different path, specify the full URL directly.
 
-**输出示例**：
+**Output Example**
 ```
-API 接口URL树状图 (15 个接口)
-└── /users (2 个接口)
-    ├── /users/list     GET      获取用户列表
-    └── /users/create   POST     创建新用户
+API Endpoint Tree (15 endpoints)
+└── /users (2 endpoints)
+    ├── /users/list     GET      Get user list
+    └── /users/create   POST     Create a new user
 ```
 
-**效果展示**
+**Screenshots**
 
-![效果展示](/img/1.png)
+![Screenshot](/img/1.png)
 
-![效果展示](/img/2.png)
+![Screenshot](/img/2.png)
