@@ -37,16 +37,6 @@ API Endpoint Tree (15 endpoints)
     └── /users/create   POST     Create a new user
 ```
 
-**🤖 OpenCode Skill**
-
-This project includes an official [OpenCode](https://opencode.ai) skill. When using OpenCode, the skill is automatically triggered when you ask about API endpoints, route trees, or Swagger interfaces. The skill enables natural language interaction with api-tree:
-
-- "Show me the API endpoints for this server" → runs `api-tree <url>`
-- "Search for auth-related endpoints" → runs `api-tree <url> -s auth`
-- "View the local openapi.json structure" → runs `api-tree /path/to/openapi.json`
-
-The skill file is located at `~/.config/opencode/skills/api-tree/SKILL.md`.
-
 **Screenshots**
 
 ![Screenshot](/img/1.png)
