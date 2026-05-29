@@ -35,6 +35,16 @@ API 接口URL树状图 (15 个接口)
     └── /users/create   POST     创建新用户
 ```
 
+**🤖 OpenCode Skill**
+
+本项目提供官方 [OpenCode](https://opencode.ai) skill。在 OpenCode 中，当你询问 API 端点、路由树或 Swagger 接口时，skill 会自动触发，实现自然语言操控 api-tree：
+
+- "帮我看看这个服务的接口" → 执行 `api-tree <url>`
+- "搜索 auth 相关的接口" → 执行 `api-tree <url> -s auth`
+- "查看本地 openapi.json 结构" → 执行 `api-tree /path/to/openapi.json`
+
+Skill 文件位于 `~/.config/opencode/skills/api-tree/SKILL.md`。
+
 **效果展示**
 
 ![效果展示](/img/1.png)
