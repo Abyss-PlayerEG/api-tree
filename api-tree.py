@@ -62,8 +62,11 @@ def build_tree(paths: dict) -> dict:
             summary = (detail.get("summary") or "").replace("\n", " ")
             node["endpoints"].append({
                 "method": method.upper(),
+                "method_lower": method.lower(),
                 "summary": summary,
+                "summary_lower": summary.lower(),
                 "path": path,
+                "path_lower": path.lower(),
             })
 
     return root
@@ -154,11 +157,11 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
 
 
 def _matches(node: dict, keyword: str) -> bool:
-    """检查节点或其子树是否包含关键词"""
+    """检查节点或其子树是否包含关键词（预计算小写值，避免重复调用 .lower()）"""
     for ep in node["endpoints"]:
-        if (keyword in ep["path"].lower()
-                or keyword in ep["summary"].lower()
-                or keyword in ep["method"].lower()):
+        if (keyword in ep["path_lower"]
+                or keyword in ep["summary_lower"]
+                or keyword in ep["method_lower"]):
             return True
     for child in node["children"].values():
         if _matches(child, keyword):

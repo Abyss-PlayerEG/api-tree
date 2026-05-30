@@ -24,20 +24,18 @@ START_TIME=$(date +%T)
 echo "[1/3] Cleaning previous build artifacts..."
 rm -rf build dist
 
-# Run PyInstaller via uv
+# Run PyInstaller via uv (onedir for fast startup)
 echo "[2/3] Building executable..."
-uv run pyinstaller --onefile --name api-tree --clean --noconfirm --icon=icon.ico api-tree.py
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --strip --icon=icon.ico api-tree.py
 
 # Show result
 echo "[3/3] Build complete."
 echo ""
 echo "---------------------------------------"
-if [[ -f dist/api-tree ]]; then
-    SIZE=$(wc -c < dist/api-tree | tr -d ' ')
-    SIZE_KB=$((SIZE / 1024))
-    SIZE_MB=$((SIZE / 1048576))
-    echo "  Output : dist/api-tree"
-    echo "  Size   : ${SIZE} bytes (approx. ${SIZE_MB} MB / ${SIZE_KB} KB)"
+if [[ -f dist/api-tree/api-tree ]]; then
+    SIZE=$(du -sh dist/api-tree | cut -f1)
+    echo "  Output : dist/api-tree/api-tree"
+    echo "  Size   : ${SIZE}"
 else
     echo "  [WARNING] Output file not found."
 fi
