@@ -105,9 +105,30 @@ class Color:
         }.get(m, Color.RESET)
 
 
+def _leaf_name(node: dict, name: str, search: str = "") -> str | None:
+    """Trace chain merges to find a leaf node's final display name.
+    Returns e.g. 'users/{userId}/orders' or None if node is a directory."""
+    children = sort_children(node)
+    if search:
+        visible = [(cn, cn_node) for cn, cn_node in children if _matches(cn_node, search)]
+    else:
+        visible = children
+
+    if not visible:
+        return name if node["endpoints"] else None
+
+    if len(visible) == 1:
+        cn, cnode = visible[0]
+        child = _leaf_name(cnode, cn, search)
+        if child is not None:
+            return f"{name}/{child}"
+
+    return None
+
+
 def print_tree(node: dict, prefix: str = "", is_last: bool = True,
                search: str = "", name: str = "", path_accum: str = "",
-               extra_eps: list = None):
+               extra_eps: list = None, name_pad: int = 0):
     children = sort_children(node)
     eps = node["endpoints"]
     if extra_eps:
@@ -132,10 +153,19 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
     else:
         visible = children
 
+    # 计算叶子路径最大宽度（对齐注释列）
+    child_pad = 0
+    if visible:
+        for cn, cn_node in visible:
+            leaf = _leaf_name(cn_node, cn, search)
+            if leaf:
+                child_pad = max(child_pad, len(f"/{leaf}"))
+
     # 单子节点（可见） -> 链式合并路径和接口，递归处理
     if name and len(visible) == 1:
         merged = f"{path_accum}/{name}" if path_accum else name
-        print_tree(visible[0][1], prefix, is_last, search, visible[0][0], merged, eps)
+        print_tree(visible[0][1], prefix, is_last, search, visible[0][0], merged, eps,
+                   name_pad=name_pad or child_pad)
         return
 
     # 搜索模式下只显示匹配的接口
@@ -156,8 +186,11 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
         line += f"{Color.DIM}{branch}{Color.RESET}"
 
         if not visible and eps:
-            # 叶子节点（有接口）
-            line += f"{Color.CYAN}{Color.BOLD}/{display_name}{Color.RESET}"
+            # 叶子节点（有接口），路径对齐到 name_pad 宽度
+            full_path = f"/{display_name}"
+            if name_pad:
+                full_path = full_path.ljust(name_pad)
+            line += f"{Color.CYAN}{Color.BOLD}{full_path}{Color.RESET}"
             first = True
             for ep in eps:
                 mc = Color.method(ep["method"])
@@ -178,7 +211,8 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
     child_prefix = "" if name == "" else prefix + ("    " if is_last else "│   ")
     for i, (child_name, child_node) in enumerate(visible):
         child_is_last = (i == len(visible) - 1)
-        print_tree(child_node, child_prefix, child_is_last, search, child_name, "")
+        print_tree(child_node, child_prefix, child_is_last, search, child_name, "",
+                   name_pad=child_pad)
 
 
 def _matches(node: dict, keyword: str) -> bool:
@@ -216,7 +250,7 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
 
     lines = []
 
-    def walk(n, prefix, is_last, path_acc, name, extra_eps=None):
+    def walk(n, prefix, is_last, path_acc, name, extra_eps=None, name_pad=0):
         children = sort_children(n)
         eps = n["endpoints"]
         if extra_eps:
@@ -239,9 +273,18 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
         else:
             visible = children
 
+        # 计算叶子路径最大宽度（对齐注释列）
+        child_pad = 0
+        if visible:
+            for cn, cn_node in visible:
+                leaf = _leaf_name(cn_node, cn, search)
+                if leaf:
+                    child_pad = max(child_pad, len(f"/{leaf}"))
+
         if name and len(visible) == 1:
             merged = f"{path_acc}/{name}" if path_acc else name
-            walk(visible[0][1], prefix, is_last, merged, visible[0][0], eps)
+            walk(visible[0][1], prefix, is_last, merged, visible[0][0], eps,
+                 name_pad=name_pad or child_pad)
             return
 
         if search and eps:
@@ -258,7 +301,11 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
             line = f'<span class="dim">{_escape(prefix)}{branch}</span>'
 
             if not visible and eps:
-                line += f'<span class="leaf">/{_escape(display)}</span>'
+                # 叶子节点，路径对齐
+                full_path = f"/{display}"
+                if name_pad:
+                    full_path = full_path.ljust(name_pad)
+                line += f'<span class="leaf">{_escape(full_path)}</span>'
                 first = True
                 for ep in eps:
                     mc = METHOD_CLASS.get(ep["method"], "")
@@ -279,7 +326,7 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
         child_prefix = "" if name == "" else prefix + ("    " if is_last else "│   ")
         for i, (cn, cnode) in enumerate(visible):
             child_last = (i == len(visible) - 1)
-            walk(cnode, child_prefix, child_last, "", cn)
+            walk(cnode, child_prefix, child_last, "", cn, name_pad=child_pad)
 
     walk(node, "", True, "", "")
 
