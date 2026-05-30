@@ -3,7 +3,7 @@
 ; Install Inno Setup: winget install --id JRSoftware.InnoSetup
 
 #define MyAppName "API Tree"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "26.5.30"
 #define MyAppPublisher "API Tree"
 #define MyAppExeName "api-tree.exe"
 #define MyAppCmdName "api-tree"
