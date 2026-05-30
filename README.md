@@ -1,43 +1,64 @@
+# API Tree CLI
 
-**API Tree CLI**
 > 📖 [中文文档](readme/Chinese.md)
 
-A lightweight command-line tool that renders beautiful terminal tree diagrams from OpenAPI (Swagger) specifications. It reads data from local files or remote servers and supports keyword-based search and filtering.
+A lightweight command-line tool that renders OpenAPI (Swagger) specifications as beautiful terminal tree diagrams. Supports reading from local files or remote servers, with keyword-based search and filtering.
 
-**✨ Features**
-* **Zero Dependencies** — Uses only the Python 3 standard library. No third-party packages required.
-* **Multi-Source** — Reads local JSON files or fetches from a remote OpenAPI server (default port :8080).
-* **Smart Search** — Use the `-s` flag to quickly filter endpoints that contain a specific keyword.
-* **Color-Coded Methods** — Different HTTP methods (GET, POST, PUT, DELETE, etc.) are highlighted in distinct colors.
-* **Clean Structure** — Automatically merges single-segment path nodes and displays endpoint summaries.
+## Features
 
-**🚀 Quick Start**
+- **Zero Dependencies** — Uses only the Python 3 standard library. No third-party packages required.
+- **Multi-Source** — Reads local JSON files or fetches from a remote OpenAPI server (default port `:8080`).
+- **Smart Search** — Use the `-s` flag to quickly filter endpoints by path, method, or summary.
+- **Color-Coded Methods** — HTTP methods are highlighted in distinct colors:
 
-**1. Prerequisites**
-Make sure Python 3 is installed on your system.
+  | Method | Color |
+  |--------|-------|
+  | GET | Green |
+  | POST | Blue |
+  | PUT | Yellow |
+  | DELETE | Red |
+  | PATCH | Magenta |
 
-**2. Run the Script**
-Run the script directly to connect to `http://localhost:8080` by default:
-`python api-tree.py`
+- **Smart Path Merging** — Automatically collapses single-child path segments for cleaner output.
+- **Springdoc Compatible** — Auto-appends `/v3/api-docs` to the provided URL.
 
-**3. Common Commands**
-* **Connect to a specific server** — `python api-tree.py http://localhost:9090`
-* **Read a local file** — `python api-tree.py /path/to/openapi.json`
-* **Search for specific endpoints** — `python api-tree.py -s auth`
-* **Show help** — `python api-tree.py -h`
+## Quick Start
 
-**🛠️ Usage Notes**
-The tool automatically appends `/v3/api-docs` to the provided URL (common with Springdoc OpenAPI). If your API documentation is served at the root path or a different path, specify the full URL directly.
+### Prerequisites
 
-**Output Example**
-```
-API Endpoint Tree (15 endpoints)
-└── /users (2 endpoints)
-    ├── /users/list     GET      Get user list
-    └── /users/create   POST     Create a new user
+- Python 3.6+
+
+### Run
+
+Connect to `http://localhost:8080` by default:
+```bash
+python api-tree.py
 ```
 
-**Screenshots**
+### Usage
+
+```bash
+python api-tree.py                          # Default: localhost:8080
+python api-tree.py http://localhost:9090    # Custom server address
+python api-tree.py /path/to/openapi.json   # Read from local file
+python api-tree.py -s auth                  # Search endpoints containing 'auth'
+python api-tree.py -h                       # Show help
+```
+
+> If the URL has no path (e.g. `http://localhost:9090`), the tool automatically appends `/v3/api-docs`. To use a different endpoint, specify the full URL directly (e.g. `http://localhost:9090/swagger.json`).
+
+## Build Executable
+
+Build a standalone `.exe` with PyInstaller:
+
+```bash
+pip install pyinstaller
+build.bat
+```
+
+Output: `dist/api-tree.exe`
+
+## Screenshots
 
 ![Screenshot](/img/1.png)
 

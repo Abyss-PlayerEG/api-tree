@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-从 OpenAPI 获取路由信息，在终端中以树形结构打印。
+Fetch OpenAPI route information and print as a tree structure in the terminal.
 
-用法:
-    <python-tool-command>                          # 默认连接 localhost:9090
-    <python-tool-command> http://localhost:9090    # 指定地址
-    <python-tool-command> /path/to/openapi.json    # 从本地 JSON 文件读取
-    <python-tool-command> -s auth                  # 搜索含 "auth" 的路径
-    <python-tool-command> -h                       # 查看帮助
+Usage:
+    <python-tool-command>                          # Default: localhost:8080
+    <python-tool-command> http://localhost:9090    # Specify server address
+    <python-tool-command> /path/to/openapi.json    # Read from local JSON file
+    <python-tool-command> -s auth                  # Search paths containing "auth"
+    <python-tool-command> -h                       # Show help
 """
 
 import json
@@ -35,10 +35,10 @@ def fetch_openapi(source: str) -> dict:
         with urllib.request.urlopen(url, timeout=10) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.URLError as e:
-        print(f"错误：无法连接到 {url}\n  {e.reason}", file=sys.stderr)
+        print(f"Error: Cannot connect to {url}\n  {e.reason}", file=sys.stderr)
         sys.exit(1)
     except json.JSONDecodeError:
-        print(f"错误：{url} 返回的不是有效的 JSON", file=sys.stderr)
+        print(f"Error: {url} returned invalid JSON", file=sys.stderr)
         sys.exit(1)
 
 
@@ -141,7 +141,7 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
             # 目录节点
             line += f"/{display_name}"
             if eps:
-                line += f"  {Color.DIM}({len(eps)} 个接口){Color.RESET}"
+                line += f"  {Color.DIM}({len(eps)} endpoints){Color.RESET}"
         print(line)
 
     # 子节点
@@ -193,22 +193,22 @@ def main():
     paths = spec.get("paths", {})
 
     if not paths:
-        print("未找到任何 API 路径", file=sys.stderr)
+        print("No API paths found", file=sys.stderr)
         sys.exit(1)
 
     tree = build_tree(paths)
     total = count_endpoints(tree)
 
     if search:
-        print(f"\n匹配 - \"{search}\"")
+        print(f"\nMatched - \"{search}\"")
     else:
         title = spec.get("info", {}).get("title", "API")
-        print(f"\n{Color.BOLD}{title} 接口URL树状图{Color.RESET}  ({total} 个接口)")
+        print(f"\n{Color.BOLD}{title} API Endpoint Tree{Color.RESET}  ({total} endpoints)")
 
     print_tree(tree, search=search)
     print()
     if not search:
-        print(f"{Color.DIM}共 {total} 个接口{Color.RESET}")
+        print(f"{Color.DIM}Total: {total} endpoints{Color.RESET}")
 
 
 if __name__ == "__main__":
