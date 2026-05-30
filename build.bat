@@ -15,7 +15,7 @@ if %errorlevel% neq 0 (
 )
 
 REM Ensure dependencies are installed
-echo [0/3] Syncing dependencies...
+echo [0/4] Syncing dependencies...
 uv sync
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to sync dependencies.
@@ -26,21 +26,21 @@ REM Record start time
 set START_TIME=%TIME%
 
 REM Clean previous build artifacts
-echo [1/3] Cleaning previous build artifacts...
+echo [1/4] Cleaning previous build artifacts...
 if exist build rmdir /s /q build
 if exist dist  rmdir /s /q dist
 
 REM Run PyInstaller via uv (onedir for fast startup)
-echo [2/3] Building executable...
-uv run pyinstaller --onedir --name api-tree --clean --noconfirm --strip --icon=icon.ico api-tree.py
+echo [2/4] Building executable...
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico api-tree.py
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
     exit /b 1
 )
 
-REM Show result
-echo [3/3] Build complete.
+REM Show executable result
+echo [3/4] Executable build complete.
 echo.
 echo ---------------------------------------
 if exist dist\api-tree\api-tree.exe (
@@ -51,6 +51,33 @@ if exist dist\api-tree\api-tree.exe (
 ) else (
     echo [WARNING] Output file not found.
 )
+
+REM ── Generate installer with Inno Setup ──────────────
+echo [4/4] Generating installer...
+set ISCC=
+
+REM Check common ISCC paths one by one
+if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe" & goto :iscc_found
+if exist "C:\Program Files\Inno Setup 6\ISCC.exe" set "ISCC=C:\Program Files\Inno Setup 6\ISCC.exe" & goto :iscc_found
+if exist "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" set "ISCC=%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" & goto :iscc_found
+
+where iscc >nul 2>nul
+if !errorlevel! equ 0 set "ISCC=iscc" & goto :iscc_found
+
+echo   Installer: SKIPPED - Inno Setup not found.
+echo   Install it: winget install --id JRSoftware.InnoSetup
+goto :done
+
+:iscc_found
+echo   Using: !ISCC!
+"!ISCC!" setup.iss
+if !errorlevel! neq 0 (
+    echo   Installer: BUILD FAILED!
+    goto :done
+)
+echo   Installer: dist\api-tree-setup-v*.exe
+
+:done
 echo   Start  : %START_TIME%
 echo   End    : %TIME%
 echo ---------------------------------------
@@ -59,4 +86,5 @@ echo ========================================
 echo   Build Successful!
 echo ========================================
 
+pause
 endlocal
