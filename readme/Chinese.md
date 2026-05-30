@@ -19,6 +19,8 @@
   | DELETE | 红色 |
   | PATCH | 紫色 |
 
+- **HTML 图像导出** — 使用 `--image` 参数将树状图导出为带样式的 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出至系统下载目录。
+
 - **智能路径合并** — 自动合并单子节点路径段，输出更简洁。
 - **Springdoc 兼容** — 自动在 URL 后追加 `/v3/api-docs` 路径。
 
@@ -42,6 +44,7 @@ python api-tree.py                          # 默认连接 localhost:8080
 python api-tree.py http://localhost:9090    # 指定服务器地址
 python api-tree.py /path/to/openapi.json   # 读取本地 JSON 文件
 python api-tree.py -s auth                  # 搜索含 "auth" 的接口
+python api-tree.py --image                  # 同时导出 HTML 至 ~/Downloads/
 python api-tree.py -h                       # 查看帮助
 ```
 
@@ -60,6 +63,10 @@ build.bat
 
 ## 效果展示
 
-![效果展示](../img/1.png)
+![Screenshot](/img/1.png)
 
-![效果展示](../img/2.png)
+![Screenshot](/img/2.png)
+
+![Screenshot](/img/3.png)
+
+![Screenshot](/img/4.png)
