@@ -7,7 +7,7 @@ Usage:
     <python-tool-command> http://localhost:9090    # Specify server address
     <python-tool-command> /path/to/openapi.json    # Read from local JSON file
     <python-tool-command> -s auth                  # Search paths containing "auth"
-    <python-tool-command> --image                  # Also output as HTML to ~/Downloads/
+    <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
     <python-tool-command> -h                       # Show help
 """
 
@@ -330,7 +330,7 @@ def main():
         if args[i] == "-s" and i + 1 < len(args):
             search = args[i + 1].lower()
             i += 2
-        elif args[i] in ("-i", "--image"):
+        elif args[i] == "--html":
             output_image = True
             i += 1
         elif args[i] == "-h" or args[i] == "--help":
@@ -364,7 +364,7 @@ def main():
     if output_image:
         img_title = spec.get("info", {}).get("title", "API")
         output_path = render_html_tree(tree, img_title, total, search)
-        print(f"{Color.DIM}Image saved to: {output_path}{Color.RESET}")
+        print(f"{Color.DIM}HTML saved to: {output_path}{Color.RESET}")
 
 
 if __name__ == "__main__":

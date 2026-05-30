@@ -19,7 +19,7 @@ A lightweight command-line tool that renders OpenAPI (Swagger) specifications as
   | DELETE | Red |
   | PATCH | Magenta |
 
-- **HTML Image Export** — Use the `--image` flag to save the tree as a styled HTML file with Catppuccin light/dark theme toggle. Output goes to your Downloads folder.
+- **HTML Image Export** — Use the `--html` flag to save the tree as a styled HTML file with Catppuccin light/dark theme toggle. Output goes to your Downloads folder.
 
 - **Smart Path Merging** — Automatically collapses single-child path segments for cleaner output.
 - **Springdoc Compatible** — Auto-appends `/v3/api-docs` to the provided URL.
@@ -44,7 +44,7 @@ python api-tree.py                          # Default: localhost:8080
 python api-tree.py http://localhost:9090    # Custom server address
 python api-tree.py /path/to/openapi.json   # Read from local file
 python api-tree.py -s auth                  # Search endpoints containing 'auth'
-python api-tree.py --image                  # Also export as HTML to ~/Downloads/
+python api-tree.py --html                   # Also export as HTML to ~/Downloads/
 python api-tree.py -h                       # Show help
 ```
 

@@ -15,12 +15,14 @@ description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的
 | `api-tree <url>` | 连接指定 OpenAPI 文档地址 |
 | `api-tree <file.json>` | 读取本地 OpenAPI JSON 文件 |
 | `api-tree <url> -s <keyword>` | 搜索含关键词的路径/方法/摘要 |
+| `api-tree <url> --html` | 同时导出带主题切换的 HTML 文件至下载目录 |
 | `api-tree -h` | 查看帮助 |
 
 ## 参数
 
 - **位置参数**: OpenAPI 文档的 URL 或本地 JSON 文件路径。若 URL 不含具体路径（以 `/` 结尾或无路径），自动追加 `/v3/api-docs`。
 - **`-s <keyword>`**: 搜索过滤（不区分大小写），匹配路径、摘要或 HTTP 方法。
+- **`--html`**: 额外生成 HTML 文件到系统下载目录（`~/Downloads/`），内置 Catppuccin 浅色/暗色主题切换。
 - **`-h` / `--help`**: 打印帮助信息。
 
 ## 输出颜色
@@ -40,6 +42,9 @@ description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的
 
 输入: "搜索 auth 相关的接口"
 动作: `api-tree -s auth` 或 `api-tree <url> -s auth`
+
+输入: "导出接口树状图为 HTML"
+动作: `api-tree <url> --html`
 
 输入: "查看本地 openapi.json"
 动作: `api-tree /path/to/openapi.json`
