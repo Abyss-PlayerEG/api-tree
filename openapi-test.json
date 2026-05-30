@@ -1,0 +1,152 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Pet Store API",
+    "version": "1.0.0",
+    "description": "A sample Pet Store API for testing api-tree CLI"
+  },
+  "paths": {
+    "/api/v1/pets": {
+      "get": {
+        "summary": "List all pets",
+        "tags": ["pets"]
+      },
+      "post": {
+        "summary": "Create a new pet",
+        "tags": ["pets"]
+      }
+    },
+    "/api/v1/pets/{id}": {
+      "get": {
+        "summary": "Get pet by ID",
+        "tags": ["pets"]
+      },
+      "put": {
+        "summary": "Update pet information",
+        "tags": ["pets"]
+      },
+      "delete": {
+        "summary": "Delete a pet",
+        "tags": ["pets"]
+      }
+    },
+    "/api/v1/pets/{id}/photos": {
+      "get": {
+        "summary": "List photos of a pet",
+        "tags": ["pets"]
+      },
+      "post": {
+        "summary": "Upload a pet photo",
+        "tags": ["pets"]
+      }
+    },
+    "/api/v1/pets/{id}/photos/{photoId}": {
+      "get": {
+        "summary": "Get a specific photo",
+        "tags": ["pets"]
+      },
+      "delete": {
+        "summary": "Remove a photo",
+        "tags": ["pets"]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "summary": "List all users",
+        "tags": ["users"]
+      },
+      "post": {
+        "summary": "Register a new user",
+        "tags": ["users"]
+      }
+    },
+    "/api/v1/users/{userId}": {
+      "get": {
+        "summary": "Get user profile",
+        "tags": ["users"]
+      },
+      "put": {
+        "summary": "Update user profile",
+        "tags": ["users"]
+      },
+      "delete": {
+        "summary": "Delete user account",
+        "tags": ["users"]
+      }
+    },
+    "/api/v1/users/{userId}/orders": {
+      "get": {
+        "summary": "List user orders",
+        "tags": ["orders"]
+      },
+      "post": {
+        "summary": "Place a new order",
+        "tags": ["orders"]
+      }
+    },
+    "/api/v1/users/{userId}/orders/{orderId}": {
+      "get": {
+        "summary": "Get order details",
+        "tags": ["orders"]
+      },
+      "patch": {
+        "summary": "Update order status",
+        "tags": ["orders"]
+      }
+    },
+    "/api/v1/stores": {
+      "get": {
+        "summary": "List all stores",
+        "tags": ["stores"]
+      }
+    },
+    "/api/v1/stores/{storeId}": {
+      "get": {
+        "summary": "Get store details",
+        "tags": ["stores"]
+      }
+    },
+    "/api/v1/stores/{storeId}/inventory": {
+      "get": {
+        "summary": "Get store inventory",
+        "tags": ["inventory"]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "User login",
+        "tags": ["auth"]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "User registration",
+        "tags": ["auth"]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "summary": "Refresh access token",
+        "tags": ["auth"]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "summary": "User logout",
+        "tags": ["auth"]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": ["system"]
+      }
+    },
+    "/api/v1/stats": {
+      "get": {
+        "summary": "System statistics",
+        "tags": ["system"]
+      }
+    }
+  }
+}

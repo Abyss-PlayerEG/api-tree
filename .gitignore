@@ -2,3 +2,21 @@
 *.spec
 /dist
 /build
+
+# uv
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Environment
+.env
+.env.*
