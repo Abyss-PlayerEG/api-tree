@@ -324,7 +324,7 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
 
 def main():
     search = ""
-    output_image = False
+    output_html = False
     source = "http://localhost:8080"
 
     args = sys.argv[1:]
@@ -334,7 +334,7 @@ def main():
             search = args[i + 1].lower()
             i += 2
         elif args[i] == "--html":
-            output_image = True
+            output_html = True
             i += 1
         elif args[i] == "-h" or args[i] == "--help":
             print(__doc__)
@@ -364,7 +364,7 @@ def main():
     if not search:
         print(f"{Color.DIM}Total: {total} endpoints{Color.RESET}")
 
-    if output_image:
+    if output_html:
         img_title = spec.get("info", {}).get("title", "API")
         output_path = render_html_tree(tree, img_title, total, search)
         print(f"{Color.DIM}HTML saved to: {output_path}{Color.RESET}")

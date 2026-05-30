@@ -1,150 +1,200 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Pet Store API",
-    "version": "1.0.0",
-    "description": "A sample Pet Store API for testing api-tree CLI"
+    "title": "Pet Shop & E-Commerce API",
+    "version": "2.0.0",
+    "description": "A realistic multi-module API for testing api-tree CLI with full HTTP method coverage"
   },
   "paths": {
     "/api/v1/pets": {
       "get": {
-        "summary": "List all pets",
+        "summary": "List all pets with pagination and filtering",
         "tags": ["pets"]
       },
       "post": {
-        "summary": "Create a new pet",
+        "summary": "Register a new pet",
         "tags": ["pets"]
       }
     },
     "/api/v1/pets/{id}": {
       "get": {
-        "summary": "Get pet by ID",
+        "summary": "Get pet details by ID",
         "tags": ["pets"]
       },
       "put": {
-        "summary": "Update pet information",
+        "summary": "Replace pet information entirely",
+        "tags": ["pets"]
+      },
+      "patch": {
+        "summary": "Update pet adoption status",
         "tags": ["pets"]
       },
       "delete": {
-        "summary": "Delete a pet",
+        "summary": "Remove pet from the system",
         "tags": ["pets"]
       }
     },
     "/api/v1/pets/{id}/photos": {
       "get": {
-        "summary": "List photos of a pet",
+        "summary": "List all photos of a pet",
         "tags": ["pets"]
       },
       "post": {
-        "summary": "Upload a pet photo",
+        "summary": "Upload a new pet photo",
         "tags": ["pets"]
       }
     },
     "/api/v1/pets/{id}/photos/{photoId}": {
-      "get": {
-        "summary": "Get a specific photo",
+      "delete": {
+        "summary": "Delete a pet photo",
         "tags": ["pets"]
       },
-      "delete": {
-        "summary": "Remove a photo",
+      "patch": {
+        "summary": "Set photo as cover image",
         "tags": ["pets"]
       }
     },
     "/api/v1/users": {
       "get": {
-        "summary": "List all users",
+        "summary": "List all registered users",
         "tags": ["users"]
       },
       "post": {
-        "summary": "Register a new user",
+        "summary": "Create a new user account",
         "tags": ["users"]
       }
     },
     "/api/v1/users/{userId}": {
       "get": {
-        "summary": "Get user profile",
+        "summary": "Get user profile by ID",
         "tags": ["users"]
       },
       "put": {
-        "summary": "Update user profile",
+        "summary": "Replace user profile entirely",
+        "tags": ["users"]
+      },
+      "patch": {
+        "summary": "Update user email or preferences",
         "tags": ["users"]
       },
       "delete": {
-        "summary": "Delete user account",
+        "summary": "Permanently delete user account",
         "tags": ["users"]
       }
     },
     "/api/v1/users/{userId}/orders": {
       "get": {
-        "summary": "List user orders",
+        "summary": "List all orders for a user",
         "tags": ["orders"]
       },
       "post": {
-        "summary": "Place a new order",
+        "summary": "Create a new order",
         "tags": ["orders"]
       }
     },
     "/api/v1/users/{userId}/orders/{orderId}": {
       "get": {
-        "summary": "Get order details",
+        "summary": "Get order details with tracking",
         "tags": ["orders"]
       },
       "patch": {
-        "summary": "Update order status",
+        "summary": "Update order delivery status",
+        "tags": ["orders"]
+      },
+      "delete": {
+        "summary": "Cancel an unpaid order",
         "tags": ["orders"]
       }
     },
-    "/api/v1/stores": {
+    "/api/v1/products": {
       "get": {
-        "summary": "List all stores",
-        "tags": ["stores"]
+        "summary": "Browse products with search and filters",
+        "tags": ["products"]
+      },
+      "post": {
+        "summary": "Add a new product to catalog",
+        "tags": ["products"]
       }
     },
-    "/api/v1/stores/{storeId}": {
+    "/api/v1/products/{productId}": {
       "get": {
-        "summary": "Get store details",
-        "tags": ["stores"]
+        "summary": "Get product details with inventory",
+        "tags": ["products"]
+      },
+      "put": {
+        "summary": "Replace product data entirely",
+        "tags": ["products"]
+      },
+      "patch": {
+        "summary": "Toggle product publish status",
+        "tags": ["products"]
+      },
+      "delete": {
+        "summary": "Remove product from catalog",
+        "tags": ["products"]
       }
     },
-    "/api/v1/stores/{storeId}/inventory": {
+    "/api/v1/products/{productId}/reviews": {
       "get": {
-        "summary": "Get store inventory",
-        "tags": ["inventory"]
+        "summary": "List product reviews with ratings",
+        "tags": ["reviews"]
+      },
+      "post": {
+        "summary": "Submit a product review",
+        "tags": ["reviews"]
+      }
+    },
+    "/api/v1/products/{productId}/reviews/{reviewId}": {
+      "delete": {
+        "summary": "Remove an inappropriate review",
+        "tags": ["reviews"]
       }
     },
     "/api/v1/auth/login": {
       "post": {
-        "summary": "User login",
+        "summary": "Authenticate and receive access token",
         "tags": ["auth"]
       }
     },
     "/api/v1/auth/register": {
       "post": {
-        "summary": "User registration",
+        "summary": "Self-register a new account",
         "tags": ["auth"]
       }
     },
     "/api/v1/auth/refresh": {
       "post": {
-        "summary": "Refresh access token",
+        "summary": "Refresh expired access token",
         "tags": ["auth"]
       }
     },
     "/api/v1/auth/logout": {
       "post": {
-        "summary": "User logout",
+        "summary": "Invalidate current session",
+        "tags": ["auth"]
+      }
+    },
+    "/api/v1/auth/password": {
+      "put": {
+        "summary": "Change account password",
         "tags": ["auth"]
       }
     },
     "/api/v1/health": {
       "get": {
-        "summary": "Health check",
+        "summary": "Service health check",
         "tags": ["system"]
       }
     },
     "/api/v1/stats": {
       "get": {
-        "summary": "System statistics",
+        "summary": "Aggregated system metrics",
+        "tags": ["system"]
+      }
+    },
+    "/api/v1/cache": {
+      "delete": {
+        "summary": "Purge all cached data",
         "tags": ["system"]
       }
     }
