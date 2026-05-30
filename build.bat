@@ -54,6 +54,11 @@ if exist dist\api-tree\api-tree.exe (
 
 REM ── Generate installer with Inno Setup ──────────────
 echo [4/4] Generating installer...
+
+REM Generate version from current date (yy.M.dd)
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.M.dd'"') do set "VERSION=%%i"
+if not defined VERSION set "VERSION=26.5.30"
+
 set ISCC=
 
 REM Check common ISCC paths one by one
@@ -70,7 +75,7 @@ goto :done
 
 :iscc_found
 echo   Using: !ISCC!
-"!ISCC!" setup.iss
+"!ISCC!" /DMyAppVersion=!VERSION! setup.iss
 if !errorlevel! neq 0 (
     echo   Installer: BUILD FAILED!
     goto :done

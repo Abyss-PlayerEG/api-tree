@@ -162,7 +162,8 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
                 child_pad = max(child_pad, len(f"/{leaf}"))
 
     # 单子节点（可见） -> 链式合并路径和接口，递归处理
-    if name and len(visible) == 1:
+    # 仅当当前节点没有自己的 endpoints 时才进行合并，避免将有效端点错误合并到子节点
+    if name and len(visible) == 1 and not eps:
         merged = f"{path_accum}/{name}" if path_accum else name
         print_tree(visible[0][1], prefix, is_last, search, visible[0][0], merged, eps,
                    name_pad=name_pad or child_pad)
@@ -185,8 +186,8 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
         line = f"{Color.DIM}{prefix}{Color.RESET}"
         line += f"{Color.DIM}{branch}{Color.RESET}"
 
-        if not visible and eps:
-            # 叶子节点（有接口），路径对齐到 name_pad 宽度
+        if eps:
+            # 有 endpoints 时显示（无论是否有子节点）
             full_path = f"/{display_name}"
             if name_pad:
                 full_path = full_path.ljust(name_pad)
@@ -201,10 +202,8 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
                     line += f" {Color.DIM}{ep['summary']}{Color.RESET}"
                 first = False
         elif visible:
-            # 目录节点
+            # 目录节点（无 endpoints）
             line += f"/{display_name}"
-            if eps:
-                line += f"  {Color.DIM}({len(eps)} endpoints){Color.RESET}"
         print(line)
 
     # 子节点
@@ -281,7 +280,8 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
                 if leaf:
                     child_pad = max(child_pad, len(f"/{leaf}"))
 
-        if name and len(visible) == 1:
+        # 仅当当前节点没有自己的 endpoints 时才进行合并，避免将有效端点错误合并到子节点
+        if name and len(visible) == 1 and not eps:
             merged = f"{path_acc}/{name}" if path_acc else name
             walk(visible[0][1], prefix, is_last, merged, visible[0][0], eps,
                  name_pad=name_pad or child_pad)
@@ -300,8 +300,8 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
             branch = "└── " if is_last else "├── "
             line = f'<span class="dim">{_escape(prefix)}{branch}</span>'
 
-            if not visible and eps:
-                # 叶子节点，路径对齐
+            if eps:
+                # 有 endpoints 时显示（无论是否有子节点）
                 full_path = f"/{display}"
                 if name_pad:
                     full_path = full_path.ljust(name_pad)
@@ -318,8 +318,6 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
                     first = False
             elif visible:
                 line += f'<span class="dir">/{_escape(display)}</span>'
-                if eps:
-                    line += f' <span class="dim">({len(eps)} endpoints)</span>'
 
             lines.append(line)
 
