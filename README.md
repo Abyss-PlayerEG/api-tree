@@ -1,6 +1,6 @@
 # API Tree CLI
 
-> 📖 [中文文档](readme/Chinese.md)
+> 📖 [简体中文](readme/SimplifiedChinese.md) | [繁體中文](readme/TraditionalChinese.md)
 
 A lightweight command-line tool that renders OpenAPI (Swagger) specifications as beautiful terminal tree diagrams. Supports reading from local files or remote servers, with keyword-based search and filtering.
 
@@ -63,10 +63,10 @@ Output: `dist/api-tree.exe`
 
 ## Screenshots
 
-![Screenshot](/img/1.png)
+![Screenshot](/readme/img/1.png)
 
-![Screenshot](/img/2.png)
+![Screenshot](/readme/img/2.png)
 
-![Screenshot](/img/3.png)
+![Screenshot](/readme/img/3.png)
 
-![Screenshot](/img/4.png)
+![Screenshot](/readme/img/4.png)
