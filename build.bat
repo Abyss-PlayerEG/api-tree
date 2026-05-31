@@ -30,9 +30,13 @@ echo [1/4] Cleaning previous build artifacts...
 if exist build rmdir /s /q build
 if exist dist  rmdir /s /q dist
 
+REM Generate single-file version from src/app/
+echo [1.5/4] Generating single-file api-tree.py...
+uv run python src/tools/merge_src.py
+
 REM Run PyInstaller via uv (onedir for fast startup)
 echo [2/4] Building executable...
-uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico api-tree.py
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico src/main.py
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
