@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from .tree import sort_children, _matches, _leaf_name, TreeMatcher
+from .tree import sort_children, _matches, _leaf_name, _leaf_name_no_search, TreeMatcher
 
 
 def _escape(text: str) -> str:
@@ -183,18 +183,6 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
     out.write_text(html, encoding="utf-8")
     return str(out)
 
-
-def _leaf_name_no_search(node: dict, name: str) -> str | None:
-    """Leaf name calculation without search filter."""
-    children = sort_children(node)
-    if not children:
-        return name if node["endpoints"] else None
-    if len(children) == 1:
-        cn, cnode = children[0]
-        child = _leaf_name_no_search(cnode, cn)
-        if child is not None:
-            return f"{name}/{child}"
-    return None
 
 
 def _max_leaf_width_no_search(node: dict) -> int:

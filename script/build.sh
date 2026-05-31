@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Change to project root (parent of script/)
+cd "$(dirname "$0")/.."
+
 echo "========================================"
 echo "  API Tree - Build Script (uv)"
 echo "========================================"

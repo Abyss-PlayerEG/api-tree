@@ -1,7 +1,7 @@
 """Console output for API tree."""
 
 from .color import Color
-from .tree import sort_children, TreeMatcher
+from .tree import sort_children, TreeMatcher, _matches, _leaf_name, _leaf_name_no_search
 
 
 def print_tree(node: dict, prefix: str = "", is_last: bool = True,
@@ -16,7 +16,7 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
 
     # Search filter
     if search:
-        matched = (matcher.matches(node) if matcher else _matches_fallback(node, search))
+        matched = (matcher.matches(node) if matcher else _matches(node, search))
         if not matched and extra_eps:
             matched = any(
                 search in ep["path_lower"]
@@ -30,7 +30,7 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
     # Pre-filter visible children in search mode
     if search:
         visible = (matcher.visible_children(node) if matcher
-                   else [(cn, cn_node) for cn, cn_node in children if _matches_fallback(cn_node, search)])
+                   else [(cn, cn_node) for cn, cn_node in children if _matches(cn_node, search)])
     else:
         visible = children
 
@@ -41,7 +41,7 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
         child_pad = 0
         if visible:
             for cn, cn_node in visible:
-                leaf = _leaf_name_fallback(cn_node, cn, search) if search else _leaf_name_no_search(cn_node, cn)
+                leaf = _leaf_name(cn_node, cn, search) if search else _leaf_name_no_search(cn_node, cn)
                 if leaf:
                     child_pad = max(child_pad, len(f"/{leaf}"))
 
@@ -92,26 +92,4 @@ def print_tree(node: dict, prefix: str = "", is_last: bool = True,
                    name_pad=child_pad, matcher=matcher)
 
 
-def _matches_fallback(node: dict, keyword: str) -> bool:
-    """Fallback match for non-matcher usage."""
-    from .tree import _matches
-    return _matches(node, keyword)
 
-
-def _leaf_name_fallback(node: dict, name: str, search: str) -> str | None:
-    """Fallback leaf name for non-matcher usage."""
-    from .tree import _leaf_name
-    return _leaf_name(node, name, search)
-
-
-def _leaf_name_no_search(node: dict, name: str) -> str | None:
-    """Leaf name calculation without search filter."""
-    children = sort_children(node)
-    if not children:
-        return name if node["endpoints"] else None
-    if len(children) == 1:
-        cn, cnode = children[0]
-        child = _leaf_name_no_search(cnode, cn)
-        if child is not None:
-            return f"{name}/{child}"
-    return None

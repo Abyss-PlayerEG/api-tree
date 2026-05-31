@@ -153,3 +153,16 @@ def _leaf_name(node: dict, name: str, search: str = "") -> str | None:
             return f"{name}/{child}"
 
     return None
+
+
+def _leaf_name_no_search(node: dict, name: str) -> str | None:
+    """Leaf name calculation without search filter."""
+    children = sort_children(node)
+    if not children:
+        return name if node["endpoints"] else None
+    if len(children) == 1:
+        cn, cnode = children[0]
+        child = _leaf_name_no_search(cnode, cn)
+        if child is not None:
+            return f"{name}/{child}"
+    return None
