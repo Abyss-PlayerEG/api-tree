@@ -24,8 +24,9 @@ def fetch_openapi(source: str) -> dict:
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
             return json.loads(resp.read().decode("utf-8"))
-    except urllib.error.URLError as e:
-        print(f"Error: Cannot connect to {url}\n  {e.reason}", file=sys.stderr)
+    except (urllib.error.URLError, ValueError) as e:
+        reason = getattr(e, 'reason', str(e))
+        print(f"Error: Cannot connect to {url}\n  {reason}", file=sys.stderr)
         sys.exit(1)
     except json.JSONDecodeError:
         print(f"Error: {url} returned invalid JSON", file=sys.stderr)

@@ -6,5 +6,8 @@ from .app import run
 
 def main():
     """Main entry point."""
-    args = parse_args()
-    run(args)
+    try:
+        args = parse_args()
+        run(args)
+    except KeyboardInterrupt:
+        print("\nInterrupted.")
