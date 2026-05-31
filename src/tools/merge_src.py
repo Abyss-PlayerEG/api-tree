@@ -4,17 +4,28 @@
 import re
 from pathlib import Path
 
-# Module import order matters for dependencies
-MODULES = [
-    "color.py",
-    "args.py",
-    "fetcher.py",
-    "tree.py",
-    "console.py",
-    "html.py",
-    "app.py",
-    "cli.py",
-]
+# Modules that must be loaded first (dependencies)
+PRIORITY_MODULES = ["color.py", "args.py"]
+# Module that must be loaded last (entry point)
+ENTRY_MODULE = "cli.py"
+
+
+def discover_modules(src_dir: Path) -> list[str]:
+    """Auto-discover all .py modules in src/app/ directory."""
+    modules = []
+    for f in sorted(src_dir.glob("*.py")):
+        if f.name == "__init__.py":
+            continue
+        modules.append(f.name)
+    return modules
+
+
+def sort_modules(modules: list[str]) -> list[str]:
+    """Sort modules: priority first, entry last, rest in middle."""
+    priority = [m for m in PRIORITY_MODULES if m in modules]
+    entry = [m for m in [ENTRY_MODULE] if m in modules]
+    rest = [m for m in modules if m not in priority and m not in entry]
+    return priority + rest + entry
 
 # Imports to remove
 RELATIVE_IMPORT_RE = re.compile(r"^from \.\w+ import .+$", re.MULTILINE)
@@ -57,11 +68,16 @@ Usage:
 
 '''
 
+    # Auto-discover and sort modules
+    discovered = discover_modules(src_dir)
+    modules = sort_modules(discovered)
+    print(f"Discovered modules: {modules}")
+
     # Collect standard imports from all modules
     all_imports = set()
     module_codes = []
 
-    for mod_name in MODULES:
+    for mod_name in modules:
         mod_path = src_dir / mod_name
         if not mod_path.exists():
             print(f"Warning: {mod_path} not found, skipping")
