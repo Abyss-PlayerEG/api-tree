@@ -1,9 +1,9 @@
 """HTML output renderer for API tree."""
 
 from datetime import datetime
-from pathlib import Path
 
-from .tree import sort_children, _matches, _leaf_name, _leaf_name_no_search, TreeMatcher
+from .config import config
+from .tree import sort_children, _leaf_name_no_search, TreeMatcher
 
 
 def _escape(text: str) -> str:
@@ -174,12 +174,11 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
         '</body>\n</html>'
     )
 
-    home = Path.home() / "Downloads"
-    home.mkdir(parents=True, exist_ok=True)
+    output_dir = config.output_dir
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe = "".join(c for c in title if c.isalnum() or c in " _-")[:50].strip().replace(" ", "_")
     fname = f"api-tree_{safe}_{ts}.html" if safe else f"api-tree_{ts}.html"
-    out = home / fname
+    out = output_dir / fname
     out.write_text(html, encoding="utf-8")
     return str(out)
 

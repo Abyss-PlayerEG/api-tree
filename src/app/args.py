@@ -1,7 +1,8 @@
 """Command-line argument parsing."""
 
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from .config import config
 
 BANNER = """
  █████╗ ██████╗ ██╗    ████████╗██████╗ ███████╗███████╗
@@ -29,25 +30,27 @@ def get_version() -> str:
 @dataclass
 class Args:
     """Parsed command-line arguments."""
-    source: str = "http://localhost:8080"
+    source: str = field(default_factory=lambda: config.default_url)
     search: str = ""
     output_html: bool = False
     agent_output: str = ""  # markdown, json, curl
     rag_output: str = ""  # jsonl, json
     rag_chunk_size: int = 10  # Number of endpoints per RAG chunk
+    init_config: bool = False  # Generate default config file
 
 
 HELP_TEXT = """Fetch OpenAPI route information and print as a tree structure in the terminal.
 
 Usage:
-    <python-tool-command>                          # Default: localhost:8080
+    <python-tool-command>                          # Default: from config or localhost:8080
     <python-tool-command> http://localhost:9090    # Specify server address
     <python-tool-command> /path/to/openapi.json    # Read from local JSON file
     <python-tool-command> -s auth                  # Search paths containing "auth"
-    <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
+    <python-tool-command> --html                   # Also output as HTML
     <python-tool-command> --agent-output markdown  # Output optimized for LLM agents (markdown/json/curl)
     <python-tool-command> --rag-output jsonl       # Output for RAG knowledge base (jsonl/json)
     <python-tool-command> --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
+    <python-tool-command> --init-config            # Generate default config file
     <python-tool-command> -v, --version            # Show version
     <python-tool-command> -h, --help               # Show help
 """
@@ -117,6 +120,9 @@ def parse_args(argv: list[str] | None = None) -> Args:
                 print(f"Error: Invalid chunk size '{argv[i + 1]}'. Must be positive integer.", file=sys.stderr)
                 sys.exit(1)
             i += 2
+        elif argv[i] == "--init-config":
+            args.init_config = True
+            i += 1
         elif argv[i] in ("-h", "--help"):
             print(get_help_text())
             sys.exit(0)

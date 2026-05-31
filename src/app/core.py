@@ -1,6 +1,8 @@
 """Main application logic and orchestration."""
 
+import json
 import sys
+from pathlib import Path
 
 from .color import Color
 from .fetcher import fetch_openapi
@@ -12,12 +14,40 @@ from .rag_output import generate_rag_output
 from .args import Args
 
 
+def _init_config() -> None:
+    """Generate default config file."""
+    config_dir = Path.home() / ".config" / "api-tree"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / "config.json"
+    
+    if config_file.exists():
+        print(f"Config file already exists: {config_file}")
+        print("Edit it manually or delete it first.")
+        return
+    
+    default_config = {
+        "output_dir": "~/Downloads",
+        "default_url": "http://localhost:8080"
+    }
+    
+    with open(config_file, "w", encoding="utf-8") as f:
+        json.dump(default_config, f, indent=4, ensure_ascii=False)
+    
+    print(f"Config file created: {config_file}")
+    print("Edit it to customize output directory and default URL.")
+
+
 def run(args: Args) -> None:
     """Run the API tree application.
     
     Args:
         args: Parsed command-line arguments
     """
+    # Handle init-config command
+    if args.init_config:
+        _init_config()
+        return
+    
     spec = fetch_openapi(args.source)
     paths = spec.get("paths", {})
 

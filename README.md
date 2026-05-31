@@ -19,7 +19,7 @@ A lightweight command-line tool that renders OpenAPI (Swagger) specifications as
   | DELETE | Red |
   | PATCH | Magenta |
 
-- **HTML Image Export** — Use the `--html` flag to save the tree as a styled HTML file with Catppuccin light/dark theme toggle. Output goes to your Downloads folder.
+- **HTML Image Export** — Use the `--html` flag to save the tree as a styled HTML file with Catppuccin light/dark theme toggle. Output directory can be configured.
 
 - **Agent Optimized Output** — Use `--agent-output` to generate LLM-friendly formats (markdown/json/curl) optimized for AI agents and automated workflows.
 
@@ -48,14 +48,34 @@ python main.py                          # Default: localhost:8080
 python main.py http://localhost:9090    # Custom server address
 python main.py /path/to/openapi.json   # Read from local file
 python main.py -s auth                  # Search endpoints containing 'auth'
-python main.py --html                   # Also export as HTML to ~/Downloads/
+python main.py --html                   # Also export as HTML
 python main.py --agent-output markdown  # LLM-optimized output (markdown/json/curl)
 python main.py --rag-output jsonl       # RAG knowledge base output (jsonl/json)
 python main.py --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
+python main.py --init-config            # Generate default config file
 python main.py -h                       # Show help
 ```
 
 > If the URL has no path (e.g. `http://localhost:9090`), the tool automatically appends `/v3/api-docs`. To use a different endpoint, specify the full URL directly (e.g. `http://localhost:9090/swagger.json`).
+
+## Configuration
+
+Generate a default config file:
+```bash
+python main.py --init-config
+```
+
+This creates `~/.config/api-tree/config.json` with default settings:
+```json
+{
+    "output_dir": "~/Downloads",
+    "default_url": "http://localhost:8080"
+}
+```
+
+Edit this file to customize:
+- `output_dir`: Output directory for HTML exports and other file outputs
+- `default_url`: Default OpenAPI server URL when no URL is specified
 
 ## Build Executable
 

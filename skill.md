@@ -1,4 +1,4 @@
----
+iyang---
 name: api-tree
 description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的终端树状图。当用户需要查看 API 接口结构、路由树、搜索特定 API 路径/端点，或提到 "api-tree"、"接口树"、"API 树"、"路由列表"、"swagger 接口"、"openapi 接口"、"查看接口"、"API 端点"、"接口结构"、"show api routes" 时使用。
 ---
@@ -15,17 +15,19 @@ description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的
 | `api-tree <url>` | 连接指定 OpenAPI 文档地址 |
 | `api-tree <file.json>` | 读取本地 OpenAPI JSON 文件 |
 | `api-tree <url> -s <keyword>` | 搜索含关键词的路径/方法/摘要 |
-| `api-tree <url> --html` | 同时导出带主题切换的 HTML 文件至下载目录 |
+| `api-tree <url> --html` | 同时导出带主题切换的 HTML 文件 |
 | `api-tree <url> --agent-output <format>` | 为 LLM Agent 优化的输出（markdown/json/curl） |
 | `api-tree <url> --rag-output <format>` | 为 RAG 知识库优化的输出（jsonl/json） |
 | `api-tree <url> --rag-chunk-size <n>` | 设置 RAG 切片大小（默认 10 个端点） |
+| `api-tree --init-config` | 生成默认配置文件 |
 | `api-tree -h` | 查看帮助 |
 
 ## 参数
 
 - **位置参数**: OpenAPI 文档的 URL 或本地 JSON 文件路径。若 URL 不含具体路径（以 `/` 结尾或无路径），自动追加 `/v3/api-docs`。
 - **`-s <keyword>`**: 搜索过滤（不区分大小写），匹配路径、摘要或 HTTP 方法。
-- **`--html`**: 额外生成 HTML 文件到系统下载目录（`~/Downloads/`），内置 Catppuccin 浅色/暗色主题切换。
+- **`--html`**: 额外生成 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出目录可通过配置文件自定义。
+- **`--init-config`**: 在 `~/.config/api-tree/` 目录下生成默认配置文件，用于自定义输出目录和默认URL等设置。
 - **`--agent-output <format>`**: 为 LLM Agent 优化的输出格式：
   - `markdown`: 精简的 Markdown 格式，包含层次结构和端点详情
   - `json`: 结构化的 JSON 格式，便于程序化处理
@@ -136,6 +138,7 @@ GET /api/v1/users/{userId}
 | "终端显示"、"终端查看"（用户明确要求） | 基本用法（无特殊参数） |
 | "搜索"、"查找"、"过滤" | `-s <keyword>` |
 | "导出 HTML"、"生成网页" | `--html` |
+| "生成配置"、"初始化配置"、"配置文件" | `--init-config` |
 | "给 Agent 用"、"LLM 使用"、"Markdown 格式" | `--agent-output markdown` |
 | "JSON 数据"、"结构化数据" | `--agent-output json` |
 | "CURL 模板"、"请求示例" | `--agent-output curl` |
@@ -151,6 +154,7 @@ GET /api/v1/users/{userId}
 ├── 包含"终端显示/终端查看"（用户明确要求） → 基本用法
 ├── 包含"搜索/查找/过滤" → 添加 -s <keyword>
 ├── 包含"HTML/网页/导出" → 添加 --html
+├── 包含"生成配置/初始化配置/配置文件" → --init-config
 ├── 包含"Agent/LLM/给AI用"
 │   ├── 需要 Markdown → --agent-output markdown
 │   ├── 需要 JSON → --agent-output json
@@ -231,6 +235,12 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 **决策**: 组合 -s 和 --agent-output
 **命令**: `api-tree <url> -s user --agent-output json`
 
+### 场景8：生成配置文件
+**用户输入**: "生成配置文件" 或 "初始化配置"
+**决策**: 使用 --init-config 参数
+**命令**: `api-tree --init-config`
+**说明**: 在 `~/.config/api-tree/config.json` 创建默认配置文件，可用于自定义输出目录和默认URL。
+
 ## 快速参考
 
 ### 常用命令速查
@@ -242,6 +252,7 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 | 查看本地文件 | `api-tree /path/to/openapi.json --agent-output markdown` |
 | 搜索接口 | `api-tree <url> -s <keyword> --agent-output markdown` |
 | 导出 HTML | `api-tree <url> --html` |
+| 生成配置文件 | `api-tree --init-config` |
 | Agent 输出 | `api-tree <url> --agent-output <format>` |
 | RAG 输出 | `api-tree <url> --rag-output <format>` |
 
@@ -251,6 +262,7 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 |------|------|-----|
 | `-s` | 搜索关键词 | 字符串 |
 | `--html` | 导出 HTML | 无值 |
+| `--init-config` | 生成默认配置文件 | 无值 |
 | `--agent-output` | Agent 输出格式（Agent 自主调用时优先使用） | markdown/json/curl |
 | `--rag-output` | RAG 输出格式 | jsonl/json |
 | `--rag-chunk-size` | RAG 切片大小 | 正整数（默认10） |
@@ -325,3 +337,23 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 
 输入: "搜索本地文件中的 auth 接口并生成 RAG 切片"
 动作: `api-tree /path/to/openapi.json -s auth --rag-output jsonl`
+
+### 配置文件管理
+
+输入: "生成配置文件"
+动作: `api-tree --init-config`
+
+输入: "初始化配置"
+动作: `api-tree --init-config`
+
+**配置文件内容**：
+```json
+{
+    "output_dir": "~/Downloads",
+    "default_url": "http://localhost:8080"
+}
+```
+
+**配置说明**：
+- `output_dir`: HTML 导出和其他文件输出的目录
+- `default_url`: 未指定 URL 时使用的默认 OpenAPI 服务器地址
