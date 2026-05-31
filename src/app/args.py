@@ -10,7 +10,7 @@ BANNER = """
 ██╔══██║██╔═══╝ ██║       ██║   ██╔══██╗██╔══╝  ██╔══╝
 ██║  ██║██║     ██║       ██║   ██║  ██║███████╗███████╗
 ╚═╝  ╚═╝╚═╝     ╚═╝       ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
-源码仓库：https://github.com/Ender-g/api-tree
+GitHub：https://github.com/Ender-g/api-tree
 """
 
 def get_version() -> str:
