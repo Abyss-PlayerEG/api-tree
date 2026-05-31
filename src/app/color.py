@@ -14,13 +14,15 @@ class Color:
     CYAN = "\033[36m"
     BOLD = "\033[1m"
 
+    _METHOD_COLORS = {
+        "GET": GREEN,
+        "POST": BLUE,
+        "PUT": YELLOW,
+        "DELETE": RED,
+        "PATCH": MAGENTA,
+    }
+
     @staticmethod
     def method(m: str) -> str:
         """Get color code for HTTP method."""
-        return {
-            "GET": Color.GREEN,
-            "POST": Color.BLUE,
-            "PUT": Color.YELLOW,
-            "DELETE": Color.RED,
-            "PATCH": Color.MAGENTA,
-        }.get(m, Color.RESET)
+        return Color._METHOD_COLORS.get(m, Color.RESET)

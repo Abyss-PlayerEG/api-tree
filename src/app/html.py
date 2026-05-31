@@ -3,7 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from .tree import sort_children, _matches, _leaf_name
+from .tree import sort_children, _matches, _leaf_name, TreeMatcher
 
 
 def _escape(text: str) -> str:
@@ -18,6 +18,7 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
         "DELETE": "method-delete", "PATCH": "method-patch",
     }
 
+    matcher = TreeMatcher(node, search) if search else None
     lines = []
 
     def walk(n, prefix, is_last, path_acc, name, extra_eps=None, name_pad=0):
@@ -27,7 +28,7 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
             eps = extra_eps + eps
 
         if search:
-            matched = _matches(n, search)
+            matched = matcher.matches(n)
             if not matched and extra_eps:
                 matched = any(
                     search in ep["path_lower"]
@@ -39,17 +40,15 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
                 return
 
         if search:
-            visible = [(cn, cn_node) for cn, cn_node in children if _matches(cn_node, search)]
+            visible = matcher.visible_children(n)
         else:
             visible = children
 
         # Calculate max leaf path width
-        child_pad = 0
         if visible:
-            for cn, cn_node in visible:
-                leaf = _leaf_name(cn_node, cn, search)
-                if leaf:
-                    child_pad = max(child_pad, len(f"/{leaf}"))
+            child_pad = matcher.max_leaf_width(n) if search else _max_leaf_width_no_search(n)
+        else:
+            child_pad = 0
 
         # Only merge when current node has no own endpoints
         if name and len(visible) == 1 and not eps:
@@ -183,3 +182,26 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
     out = home / fname
     out.write_text(html, encoding="utf-8")
     return str(out)
+
+
+def _leaf_name_no_search(node: dict, name: str) -> str | None:
+    """Leaf name calculation without search filter."""
+    children = sort_children(node)
+    if not children:
+        return name if node["endpoints"] else None
+    if len(children) == 1:
+        cn, cnode = children[0]
+        child = _leaf_name_no_search(cnode, cn)
+        if child is not None:
+            return f"{name}/{child}"
+    return None
+
+
+def _max_leaf_width_no_search(node: dict) -> int:
+    """Calculate max leaf path width for all children (no search filter)."""
+    pad = 0
+    for cn, cn_node in sort_children(node):
+        leaf = _leaf_name_no_search(cn_node, cn)
+        if leaf:
+            pad = max(pad, len(f"/{leaf}"))
+    return pad

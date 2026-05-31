@@ -4,7 +4,7 @@ import sys
 
 from .color import Color
 from .fetcher import fetch_openapi
-from .tree import build_tree, count_endpoints
+from .tree import build_tree, count_endpoints, TreeMatcher
 from .console import print_tree
 from .html import render_html_tree
 from .args import Args
@@ -32,7 +32,8 @@ def run(args: Args) -> None:
         title = spec.get("info", {}).get("title", "API")
         print(f"\n{Color.BOLD}{title} API Endpoint Tree{Color.RESET}  ({total} endpoints)")
 
-    print_tree(tree, search=args.search)
+    matcher = TreeMatcher(tree, args.search) if args.search else None
+    print_tree(tree, search=args.search, matcher=matcher)
     print()
     if not args.search:
         print(f"{Color.DIM}Total: {total} endpoints{Color.RESET}")
