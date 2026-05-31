@@ -30,34 +30,56 @@ echo [1/4] Cleaning previous build artifacts...
 if exist build rmdir /s /q build
 if exist dist  rmdir /s /q dist
 
+REM Generate version from current date (yy.M.d)
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.M.d'"') do set "VERSION=%%i"
+if not defined VERSION set "VERSION=26.5.31"
+
+REM Save numeric version for Inno Setup
+set "NUMERIC_VERSION=%VERSION%"
+
+REM Optional version prefix
+set /p "PREFIX=Version prefix (Enter to skip): "
+if defined PREFIX set "VERSION=%PREFIX%-%VERSION%"
+
+REM Generate single-file version from src/app/
+echo [1.5/4] Generating single-file api-tree.py (v%VERSION%)...
+uv run python src/tools/merge_src.py %VERSION%
+
 REM Run PyInstaller via uv (onedir for fast startup)
 echo [2/4] Building executable...
-uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico api-tree.py
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico src/main.py
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
+    del src\_version.py >nul 2>nul
     exit /b 1
 )
+
+REM Cleanup build-time version file
+del src\_version.py >nul 2>nul
 
 REM Show executable result
 echo [3/4] Executable build complete.
 echo.
 echo ---------------------------------------
 if exist dist\api-tree\api-tree.exe (
-    for /f "tokens=*" %%A in ('dir /s /-c dist\api-tree 2^>nul ^| findstr /r "^$" ^| findstr /v "Dir(s)"') do (
-        set "LINE=%%A"
-    )
     echo   Output : dist\api-tree\api-tree.exe
 ) else (
     echo [WARNING] Output file not found.
 )
 
+REM Create zip archive of dist\api-tree
+set "ZIP_NAME=api-tree-%VERSION%-win64.zip"
+if exist "dist\!ZIP_NAME!" del "dist\!ZIP_NAME!"
+powershell -NoProfile -Command "Compress-Archive -Path 'dist\api-tree\*' -DestinationPath 'dist\!ZIP_NAME!' -Force"
+if !errorlevel! equ 0 (
+    echo   Zip    : dist\!ZIP_NAME!
+) else (
+    echo [WARNING] Zip creation failed.
+)
+
 REM ── Generate installer with Inno Setup ──────────────
 echo [4/4] Generating installer...
-
-REM Generate version from current date (yy.M.dd)
-for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.M.dd'"') do set "VERSION=%%i"
-if not defined VERSION set "VERSION=26.5.30"
 
 set ISCC=
 
@@ -75,7 +97,7 @@ goto :done
 
 :iscc_found
 echo   Using: !ISCC!
-"!ISCC!" /DMyAppVersion=!VERSION! setup.iss
+"!ISCC!" /DMyAppVersion=!VERSION! /DMyAppNumericVersion=!NUMERIC_VERSION! setup.iss
 if !errorlevel! neq 0 (
     echo   Installer: BUILD FAILED!
     goto :done
@@ -91,5 +113,4 @@ echo ========================================
 echo   Build Successful!
 echo ========================================
 
-pause
 endlocal

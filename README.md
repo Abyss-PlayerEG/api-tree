@@ -34,18 +34,18 @@ A lightweight command-line tool that renders OpenAPI (Swagger) specifications as
 
 Connect to `http://localhost:8080` by default:
 ```bash
-python api-tree.py
+python main.py
 ```
 
 ### Usage
 
 ```bash
-python api-tree.py                          # Default: localhost:8080
-python api-tree.py http://localhost:9090    # Custom server address
-python api-tree.py /path/to/openapi.json   # Read from local file
-python api-tree.py -s auth                  # Search endpoints containing 'auth'
-python api-tree.py --html                   # Also export as HTML to ~/Downloads/
-python api-tree.py -h                       # Show help
+python main.py                          # Default: localhost:8080
+python main.py http://localhost:9090    # Custom server address
+python main.py /path/to/openapi.json   # Read from local file
+python main.py -s auth                  # Search endpoints containing 'auth'
+python main.py --html                   # Also export as HTML to ~/Downloads/
+python main.py -h                       # Show help
 ```
 
 > If the URL has no path (e.g. `http://localhost:9090`), the tool automatically appends `/v3/api-docs`. To use a different endpoint, specify the full URL directly (e.g. `http://localhost:9090/swagger.json`).

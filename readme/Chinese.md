@@ -34,18 +34,18 @@
 
 默认连接 `http://localhost:8080`：
 ```bash
-python api-tree.py
+python main.py
 ```
 
 ### 用法
 
 ```bash
-python api-tree.py                          # 默认连接 localhost:8080
-python api-tree.py http://localhost:9090    # 指定服务器地址
-python api-tree.py /path/to/openapi.json   # 读取本地 JSON 文件
-python api-tree.py -s auth                  # 搜索含 "auth" 的接口
-python api-tree.py --html                   # 同时导出 HTML 至 ~/Downloads/
-python api-tree.py -h                       # 查看帮助
+python main.py                          # 默认连接 localhost:8080
+python main.py http://localhost:9090    # 指定服务器地址
+python main.py /path/to/openapi.json   # 读取本地 JSON 文件
+python main.py -s auth                  # 搜索含 "auth" 的接口
+python main.py --html                   # 同时导出 HTML 至 ~/Downloads/
+python main.py -h                       # 查看帮助
 ```
 
 > 如果 URL 不含路径（如 `http://localhost:9090`），工具会自动追加 `/v3/api-docs`。若接口文档在其他路径，请直接指定完整 URL（如 `http://localhost:9090/swagger.json`）。
