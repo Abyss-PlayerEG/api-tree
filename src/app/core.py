@@ -37,15 +37,37 @@ def _init_config() -> None:
     print("Edit it to customize output directory and default URL.")
 
 
+def _show_config() -> None:
+    """Show current config file content."""
+    config_file = Path.home() / ".config" / "api-tree" / "config.json"
+    
+    if not config_file.exists():
+        print(f"Config file not found: {config_file}")
+        print("Run '--config init' to create a default config file.")
+        return
+    
+    try:
+        with open(config_file, "r", encoding="utf-8") as f:
+            config_data = json.load(f)
+        print(f"Config file: {config_file}")
+        print("\nCurrent configuration:")
+        print(json.dumps(config_data, indent=4, ensure_ascii=False))
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Error reading config file: {e}")
+
+
 def run(args: Args) -> None:
     """Run the API tree application.
     
     Args:
         args: Parsed command-line arguments
     """
-    # Handle init-config command
+    # Handle config commands
     if args.init_config:
         _init_config()
+        return
+    if args.show_config:
+        _show_config()
         return
     
     spec = fetch_openapi(args.source)

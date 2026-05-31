@@ -53,6 +53,7 @@ python main.py --agent-output markdown  # LLM-optimized output (markdown/json/cu
 python main.py --rag-output jsonl       # RAG knowledge base output (jsonl/json)
 python main.py --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
 python main.py --init-config            # Generate default config file
+python main.py --show-config            # Show current config
 python main.py -h                       # Show help
 ```
 
@@ -63,6 +64,11 @@ python main.py -h                       # Show help
 Generate a default config file:
 ```bash
 python main.py --init-config
+```
+
+Show current config:
+```bash
+python main.py --show-config
 ```
 
 This creates `~/.config/api-tree/config.json` with default settings:

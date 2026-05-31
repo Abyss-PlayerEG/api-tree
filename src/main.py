@@ -12,6 +12,7 @@ Usage:
     <python-tool-command> --rag-output jsonl       # Output for RAG knowledge base (jsonl/json)
     <python-tool-command> --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
     <python-tool-command> --init-config            # Generate default config file
+    <python-tool-command> --show-config            # Show current config
     <python-tool-command> -v, --version            # Show version
     <python-tool-command> -h, --help               # Show help
 

@@ -53,6 +53,7 @@ python main.py --agent-output markdown  # LLM 最佳化輸出（markdown/json/cu
 python main.py --rag-output jsonl       # RAG 知識庫輸出（jsonl/json）
 python main.py --rag-chunk-size 20      # RAG 切片大小（預設：10）
 python main.py --init-config            # 產生預設設定檔
+python main.py --show-config            # 顯示目前設定
 python main.py -h                       # 檢視說明
 ```
 
@@ -63,6 +64,11 @@ python main.py -h                       # 檢視說明
 產生預設設定檔：
 ```bash
 python main.py --init-config
+```
+
+顯示目前設定：
+```bash
+python main.py --show-config
 ```
 
 這會在 `~/.config/api-tree/config.json` 建立預設設定：

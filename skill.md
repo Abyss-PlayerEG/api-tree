@@ -20,6 +20,7 @@ description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的
 | `api-tree <url> --rag-output <format>` | 为 RAG 知识库优化的输出（jsonl/json） |
 | `api-tree <url> --rag-chunk-size <n>` | 设置 RAG 切片大小（默认 10 个端点） |
 | `api-tree --init-config` | 生成默认配置文件 |
+| `api-tree --show-config` | 显示当前配置 |
 | `api-tree -h` | 查看帮助 |
 
 ## 参数
@@ -28,6 +29,7 @@ description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的
 - **`-s <keyword>`**: 搜索过滤（不区分大小写），匹配路径、摘要或 HTTP 方法。
 - **`--html`**: 额外生成 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出目录可通过配置文件自定义。
 - **`--init-config`**: 在 `~/.config/api-tree/` 目录下生成默认配置文件，用于自定义输出目录和默认URL等设置。
+- **`--show-config`**: 显示当前配置文件内容和位置。
 - **`--agent-output <format>`**: 为 LLM Agent 优化的输出格式：
   - `markdown`: 精简的 Markdown 格式，包含层次结构和端点详情
   - `json`: 结构化的 JSON 格式，便于程序化处理
@@ -139,6 +141,7 @@ GET /api/v1/users/{userId}
 | "搜索"、"查找"、"过滤" | `-s <keyword>` |
 | "导出 HTML"、"生成网页" | `--html` |
 | "生成配置"、"初始化配置"、"配置文件" | `--init-config` |
+| "查看配置"、"显示配置"、"当前配置" | `--show-config` |
 | "给 Agent 用"、"LLM 使用"、"Markdown 格式" | `--agent-output markdown` |
 | "JSON 数据"、"结构化数据" | `--agent-output json` |
 | "CURL 模板"、"请求示例" | `--agent-output curl` |
@@ -155,6 +158,7 @@ GET /api/v1/users/{userId}
 ├── 包含"搜索/查找/过滤" → 添加 -s <keyword>
 ├── 包含"HTML/网页/导出" → 添加 --html
 ├── 包含"生成配置/初始化配置/配置文件" → --init-config
+├── 包含"查看配置/显示配置/当前配置" → --show-config
 ├── 包含"Agent/LLM/给AI用"
 │   ├── 需要 Markdown → --agent-output markdown
 │   ├── 需要 JSON → --agent-output json
@@ -235,11 +239,16 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 **决策**: 组合 -s 和 --agent-output
 **命令**: `api-tree <url> -s user --agent-output json`
 
-### 场景8：生成配置文件
+### 场景8：配置文件管理
 **用户输入**: "生成配置文件" 或 "初始化配置"
 **决策**: 使用 --init-config 参数
 **命令**: `api-tree --init-config`
 **说明**: 在 `~/.config/api-tree/config.json` 创建默认配置文件，可用于自定义输出目录和默认URL。
+
+**用户输入**: "查看配置" 或 "显示当前配置"
+**决策**: 使用 --show-config 参数
+**命令**: `api-tree --show-config`
+**说明**: 显示当前配置文件的内容和位置。
 
 ## 快速参考
 
@@ -253,6 +262,7 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 | 搜索接口 | `api-tree <url> -s <keyword> --agent-output markdown` |
 | 导出 HTML | `api-tree <url> --html` |
 | 生成配置文件 | `api-tree --init-config` |
+| 查看配置 | `api-tree --show-config` |
 | Agent 输出 | `api-tree <url> --agent-output <format>` |
 | RAG 输出 | `api-tree <url> --rag-output <format>` |
 
@@ -263,6 +273,7 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 | `-s` | 搜索关键词 | 字符串 |
 | `--html` | 导出 HTML | 无值 |
 | `--init-config` | 生成默认配置文件 | 无值 |
+| `--show-config` | 显示当前配置 | 无值 |
 | `--agent-output` | Agent 输出格式（Agent 自主调用时优先使用） | markdown/json/curl |
 | `--rag-output` | RAG 输出格式 | jsonl/json |
 | `--rag-chunk-size` | RAG 切片大小 | 正整数（默认10） |
@@ -345,6 +356,12 @@ api-tree <url> --rag-output jsonl --rag-chunk-size 20
 
 输入: "初始化配置"
 动作: `api-tree --init-config`
+
+输入: "查看配置"
+动作: `api-tree --show-config`
+
+输入: "显示当前配置"
+动作: `api-tree --show-config`
 
 **配置文件内容**：
 ```json
