@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Modules that must be loaded first (dependencies)
-PRIORITY_MODULES = ["color.py", "_version.py", "banner.py", "args.py"]
+PRIORITY_MODULES = ["color.py", "_version.py", "args.py"]
 # Module that must be loaded last (entry point)
 ENTRY_MODULE = "cli.py"
 
@@ -16,7 +16,7 @@ def discover_modules(src_dir: Path) -> list[str]:
     """Auto-discover all .py modules in src/app/ directory."""
     modules = []
     for f in sorted(src_dir.glob("*.py")):
-        if f.name == "__init__.py":
+        if f.name in ("__init__.py", "__main__.py"):
             continue
         modules.append(f.name)
     return modules

@@ -25,7 +25,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 ; Output
 OutputDir=dist
-OutputBaseFilename={#MyAppCmdName}-setup-{#MyAppVersion}
+OutputBaseFilename={#MyAppCmdName}-setup-{#MyAppVersion}-win64
 ; Compression
 Compression=lzma2/ultra64
 SolidCompression=yes

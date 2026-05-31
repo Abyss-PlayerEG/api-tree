@@ -16,12 +16,12 @@ Github: https://github.com/Ender-g/api-tree
 """
 
 import sys
-import os
+from pathlib import Path
 
 # Add project root to path for src package
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.app.cli import main
+from src.app import main
 
 if __name__ == "__main__":
     main()

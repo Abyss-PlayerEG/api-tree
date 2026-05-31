@@ -1,7 +1,7 @@
 """Command-line interface entry point."""
 
 from .args import parse_args
-from .app import run
+from .core import run
 
 
 def main():

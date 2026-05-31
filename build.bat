@@ -63,12 +63,19 @@ echo [3/4] Executable build complete.
 echo.
 echo ---------------------------------------
 if exist dist\api-tree\api-tree.exe (
-    for /f "tokens=*" %%A in ('dir /s /-c dist\api-tree 2^>nul ^| findstr /r "^$" ^| findstr /v "Dir(s)"') do (
-        set "LINE=%%A"
-    )
     echo   Output : dist\api-tree\api-tree.exe
 ) else (
     echo [WARNING] Output file not found.
+)
+
+REM Create zip archive of dist\api-tree
+set "ZIP_NAME=api-tree-%VERSION%-win64.zip"
+if exist "dist\!ZIP_NAME!" del "dist\!ZIP_NAME!"
+powershell -NoProfile -Command "Compress-Archive -Path 'dist\api-tree\*' -DestinationPath 'dist\!ZIP_NAME!' -Force"
+if !errorlevel! equ 0 (
+    echo   Zip    : dist\!ZIP_NAME!
+) else (
+    echo [WARNING] Zip creation failed.
 )
 
 REM ── Generate installer with Inno Setup ──────────────
