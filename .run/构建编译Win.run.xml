@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="构建编译" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="start ./script/build.bat" />
+  <configuration default="false" name="构建编译Win" type="ShConfigurationType">
+    <option name="SCRIPT_TEXT" value="clear &amp;&amp; ./script/build.bat" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />
