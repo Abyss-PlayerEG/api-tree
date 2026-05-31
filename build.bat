@@ -34,12 +34,16 @@ REM Generate version from current date (yy.M.d)
 for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.M.d'"') do set "VERSION=%%i"
 if not defined VERSION set "VERSION=26.5.31"
 
+REM Save numeric version for Inno Setup
+set "NUMERIC_VERSION=%VERSION%"
+
+REM Optional version prefix
+set /p "PREFIX=Version prefix (Enter to skip): "
+if defined PREFIX set "VERSION=%PREFIX%-%VERSION%"
+
 REM Generate single-file version from src/app/
 echo [1.5/4] Generating single-file api-tree.py (v%VERSION%)...
 uv run python src/tools/merge_src.py %VERSION%
-
-REM Patch version in src/__init__.py for PyInstaller
-uv run python src/tools/patch_version.py %VERSION%
 
 REM Run PyInstaller via uv (onedir for fast startup)
 echo [2/4] Building executable...
@@ -47,13 +51,8 @@ uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico 
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
-    REM Restore original file
-    uv run python src/tools/patch_version.py restore
     exit /b 1
 )
-
-REM Restore original file
-uv run python src/tools/patch_version.py restore
 
 REM Show executable result
 echo [3/4] Executable build complete.
@@ -87,7 +86,7 @@ goto :done
 
 :iscc_found
 echo   Using: !ISCC!
-"!ISCC!" /DMyAppVersion=!VERSION! setup.iss
+"!ISCC!" /DMyAppVersion=!VERSION! /DMyAppNumericVersion=!NUMERIC_VERSION! setup.iss
 if !errorlevel! neq 0 (
     echo   Installer: BUILD FAILED!
     goto :done

@@ -1,10 +1,15 @@
-; ─── API Tree - Inno Setup Installer Script ───
+
+
+ ; ─── API Tree - Inno Setup Installer Script ───
 ; Build: iscc setup.iss  (requires Inno Setup 6+)
 ; Install Inno Setup: winget install --id JRSoftware.InnoSetup
 
 #define MyAppName "API Tree"
 #ifndef MyAppVersion
 #define MyAppVersion "99.99.99"
+#endif
+#ifndef MyAppNumericVersion
+#define MyAppNumericVersion MyAppVersion
 #endif
 #define MyAppPublisher "API Tree"
 #define MyAppExeName "api-tree.exe"
@@ -20,7 +25,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 ; Output
 OutputDir=dist
-OutputBaseFilename={#MyAppCmdName}-setup-v{#MyAppVersion}
+OutputBaseFilename={#MyAppCmdName}-setup-{#MyAppVersion}
 ; Compression
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -35,7 +40,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ; Misc
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
-VersionInfoVersion={#MyAppVersion}
+VersionInfoVersion={#MyAppNumericVersion}
 SetupIconFile=icon.ico
 
 [Languages]

@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Modules that must be loaded first (dependencies)
-PRIORITY_MODULES = ["color.py", "args.py"]
+PRIORITY_MODULES = ["color.py", "_version.py", "banner.py", "args.py"]
 # Module that must be loaded last (entry point)
 ENTRY_MODULE = "cli.py"
 
@@ -101,7 +101,7 @@ Usage:
             stripped = line.strip()
             if stripped.startswith("import ") or (stripped.startswith("from ") and "from ." not in stripped):
                 # Only keep non-relative imports and exclude src imports
-                if not stripped.startswith("from .") and not stripped.startswith("from src import"):
+                if not stripped.startswith("from .") and not stripped.startswith("from src"):
                     all_imports.add(stripped)
 
         # Get code without relative imports
@@ -131,6 +131,11 @@ if __name__ == "__main__":
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(content, encoding="utf-8")
     print(f"Generated: {output_file}")
+
+    # Write version to src/_version.py for PyInstaller
+    version_file = project_root / "src" / "_version.py"
+    version_file.write_text(f'__version__ = "{version}"\n', encoding="utf-8")
+    print(f"Version file: {version_file}")
 
 
 if __name__ == "__main__":
