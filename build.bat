@@ -51,8 +51,12 @@ uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico 
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
+    del src\_version.py >nul 2>nul
     exit /b 1
 )
+
+REM Cleanup build-time version file
+del src\_version.py >nul 2>nul
 
 REM Show executable result
 echo [3/4] Executable build complete.
@@ -102,5 +106,4 @@ echo ========================================
 echo   Build Successful!
 echo ========================================
 
-pause
 endlocal

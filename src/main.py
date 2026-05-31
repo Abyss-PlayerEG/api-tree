@@ -8,7 +8,11 @@ Usage:
     <python-tool-command> /path/to/openapi.json    # Read from local JSON file
     <python-tool-command> -s auth                  # Search paths containing "auth"
     <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
-    <python-tool-command> -h                       # Show help
+    <python-tool-command> -v, --version            # Show version
+    <python-tool-command> -h, --help               # Show help
+
+Github: https://github.com/Ender-g/api-tree
+
 """
 
 import sys

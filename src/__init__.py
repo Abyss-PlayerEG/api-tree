@@ -1,6 +1,9 @@
 """API Tree - Fetch OpenAPI route information and print as a tree structure."""
 
-from ._version import __version__
+try:
+    from ._version import __version__
+except (ImportError, AttributeError):
+    __version__ = "DEV"
 
 from .app import main
 
