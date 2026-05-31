@@ -33,9 +33,9 @@ echo [1/4] Cleaning previous build artifacts...
 if exist build rmdir /s /q build
 if exist dist  rmdir /s /q dist
 
-REM Generate version from current date (yy.M.d)
-for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.M.d'"') do set "VERSION=%%i"
-if not defined VERSION set "VERSION=26.5.31"
+REM Generate version from current date (yy.mm.dd.hhmmss)
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.MM.dd.HHmmss'"') do set "VERSION=%%i"
+if not defined VERSION set "VERSION=26.05.31.143025"
 
 REM Save numeric version for Inno Setup
 set "NUMERIC_VERSION=%VERSION%"

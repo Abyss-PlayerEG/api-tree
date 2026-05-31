@@ -21,6 +21,10 @@
 
 - **HTML 图像导出** — 使用 `--html` 参数将树状图导出为带样式的 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出至系统下载目录。
 
+- **Agent 优化输出** — 使用 `--agent-output` 参数生成 LLM 友好格式（markdown/json/curl），专为 AI 代理和自动化工作流优化。
+
+- **RAG 知识库输出** — 使用 `--rag-output` 参数生成结构化切片（jsonl/json），适用于向量数据库和 RAG 检索系统。
+
 - **智能路径合并** — 自动合并单子节点路径段，输出更简洁。
 - **Springdoc 兼容** — 自动在 URL 后追加 `/v3/api-docs` 路径。
 
@@ -45,6 +49,9 @@ python main.py http://localhost:9090    # 指定服务器地址
 python main.py /path/to/openapi.json   # 读取本地 JSON 文件
 python main.py -s auth                  # 搜索含 "auth" 的接口
 python main.py --html                   # 同时导出 HTML 至 ~/Downloads/
+python main.py --agent-output markdown  # LLM 优化输出（markdown/json/curl）
+python main.py --rag-output jsonl       # RAG 知识库输出（jsonl/json）
+python main.py --rag-chunk-size 20      # RAG 切片大小（默认：10）
 python main.py -h                       # 查看帮助
 ```
 

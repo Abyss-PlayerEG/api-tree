@@ -32,6 +32,9 @@ class Args:
     source: str = "http://localhost:8080"
     search: str = ""
     output_html: bool = False
+    agent_output: str = ""  # markdown, json, curl
+    rag_output: str = ""  # jsonl, json
+    rag_chunk_size: int = 10  # Number of endpoints per RAG chunk
 
 
 HELP_TEXT = """Fetch OpenAPI route information and print as a tree structure in the terminal.
@@ -42,6 +45,9 @@ Usage:
     <python-tool-command> /path/to/openapi.json    # Read from local JSON file
     <python-tool-command> -s auth                  # Search paths containing "auth"
     <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
+    <python-tool-command> --agent-output markdown  # Output optimized for LLM agents (markdown/json/curl)
+    <python-tool-command> --rag-output jsonl       # Output for RAG knowledge base (jsonl/json)
+    <python-tool-command> --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
     <python-tool-command> -v, --version            # Show version
     <python-tool-command> -h, --help               # Show help
 """
@@ -88,6 +94,29 @@ def parse_args(argv: list[str] | None = None) -> Args:
         elif argv[i] == "--html":
             args.output_html = True
             i += 1
+        elif argv[i] == "--agent-output" and i + 1 < len(argv):
+            format_type = argv[i + 1].lower()
+            if format_type not in ("markdown", "json", "curl"):
+                print(f"Error: Invalid agent output format '{format_type}'. Use: markdown, json, curl", file=sys.stderr)
+                sys.exit(1)
+            args.agent_output = format_type
+            i += 2
+        elif argv[i] == "--rag-output" and i + 1 < len(argv):
+            format_type = argv[i + 1].lower()
+            if format_type not in ("jsonl", "json"):
+                print(f"Error: Invalid RAG output format '{format_type}'. Use: jsonl, json", file=sys.stderr)
+                sys.exit(1)
+            args.rag_output = format_type
+            i += 2
+        elif argv[i] == "--rag-chunk-size" and i + 1 < len(argv):
+            try:
+                args.rag_chunk_size = int(argv[i + 1])
+                if args.rag_chunk_size <= 0:
+                    raise ValueError
+            except ValueError:
+                print(f"Error: Invalid chunk size '{argv[i + 1]}'. Must be positive integer.", file=sys.stderr)
+                sys.exit(1)
+            i += 2
         elif argv[i] in ("-h", "--help"):
             print(get_help_text())
             sys.exit(0)
