@@ -231,9 +231,9 @@ def post_process(code: str) -> str:
 
 
 def get_version() -> str:
-    """Generate version string from date (yy.mm.dd.hhmmss)."""
+    """Generate version string from date (yy.mm.dd.hhmm)."""
     now = datetime.now()
-    return f"{now.year % 100:02d}.{now.month:02d}.{now.day:02d}.{now.hour:02d}{now.minute:02d}{now.second:02d}"
+    return f"{now.year % 100:02d}.{now.month:02d}.{now.day:02d}.{now.hour:02d}{now.minute:02d}"
 
 
 def main():
