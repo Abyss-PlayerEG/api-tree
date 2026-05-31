@@ -1,6 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM Change to project root (parent of script/)
+cd /d "%~dp0\.."
+
 echo ========================================
 echo   API Tree - Build Script (uv)
 echo ========================================

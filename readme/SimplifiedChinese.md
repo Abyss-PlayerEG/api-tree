@@ -1,6 +1,6 @@
 # API Tree CLI
 
-> ⬆️ [English](../README.md)
+> ⬆️ [English](../README.md) | [繁體中文](TraditionalChinese.md)
 
 一个轻量级的命令行工具，用于从 OpenAPI (Swagger) 规范生成美观的终端树状图。支持从本地文件、远程服务器读取数据，并具备搜索过滤功能。
 
@@ -63,10 +63,10 @@ build.bat
 
 ## 效果展示
 
-![Screenshot](/img/1.png)
+![Screenshot](/readme/img/1.png)
 
-![Screenshot](/img/2.png)
+![Screenshot](/readme/img/2.png)
 
-![Screenshot](/img/3.png)
+![Screenshot](/readme/img/3.png)
 
-![Screenshot](/img/4.png)
+![Screenshot](/readme/img/4.png)
