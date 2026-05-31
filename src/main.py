@@ -18,8 +18,12 @@ Github: https://github.com/Ender-g/api-tree
 
 """
 
+import os
 import sys
 from pathlib import Path
+
+# Set UTF-8 encoding environment variables
+os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
 
 # Add project root to path for src package
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))

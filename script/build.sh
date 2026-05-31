@@ -27,8 +27,8 @@ START_TIME=$(date +%T)
 echo "[1/4] Cleaning previous build artifacts..."
 rm -rf build dist
 
-# Generate version from current date (yy.mm.dd.hhmmss)
-VERSION=$(date +%y.%m.%d.%H%M%S)
+# Generate version from current date (yy.mm.dd.hhmm)
+VERSION=$(date +%y.%m.%d.%H%M)
 
 # Optional version prefix
 read -rp "Version prefix (Enter to skip): " PREFIX
