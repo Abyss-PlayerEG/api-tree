@@ -2,6 +2,8 @@
 """Merge src/ package modules into a single main.py file."""
 
 import re
+import sys
+from datetime import datetime
 from pathlib import Path
 
 # Modules that must be loaded first (dependencies)
@@ -47,7 +49,16 @@ def extract_code(filepath: Path) -> str:
     return code
 
 
+def get_version() -> str:
+    """Generate version string from date (yy.M.d)."""
+    now = datetime.now()
+    return f"{now.year % 100}.{now.month}.{now.day}"
+
+
 def main():
+    # Get version from argument or generate from date
+    version = sys.argv[1] if len(sys.argv) > 1 else get_version()
+    
     project_root = Path(__file__).parent.parent.parent
     src_dir = project_root / "src" / "app"
     output_file = project_root / "dist" / "api-tree.py"
@@ -89,8 +100,8 @@ Usage:
         for line in code.splitlines():
             stripped = line.strip()
             if stripped.startswith("import ") or (stripped.startswith("from ") and "from ." not in stripped):
-                # Only keep non-relative imports
-                if not stripped.startswith("from ."):
+                # Only keep non-relative imports and exclude src imports
+                if not stripped.startswith("from .") and not stripped.startswith("from src import"):
                     all_imports.add(stripped)
 
         # Get code without relative imports
@@ -101,14 +112,20 @@ Usage:
     imports_section = "\n".join(sorted(all_imports)) + "\n"
     body = "\n\n".join(module_codes)
 
-    # Add main entry point
-    main_entry = '''
+    # Add version and main entry point
+    main_entry = f'''
+
+__version__ = "{version}"
 
 if __name__ == "__main__":
     main()
 '''
 
     content = header + imports_section + "\n" + body + main_entry
+
+    # Replace DEV version with actual version
+    content = content.replace('__version__ = "DEV"', f'__version__ = "{version}"')
+    print(f"Version: {version}")
 
     # Ensure dist directory exists
     output_file.parent.mkdir(parents=True, exist_ok=True)

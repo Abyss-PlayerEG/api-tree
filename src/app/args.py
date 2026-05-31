@@ -3,6 +3,19 @@
 import sys
 from dataclasses import dataclass
 
+def get_version() -> str:
+    """Get application version."""
+    # Check if __version__ exists in current module's globals
+    # (works for single-file distribution where version is defined at module level)
+    if "__version__" in globals():
+        return globals()["__version__"]
+    # Try importing from package (development environment)
+    try:
+        from src import __version__
+        return __version__
+    except ImportError:
+        return "DEV"
+
 
 @dataclass
 class Args:
@@ -20,7 +33,8 @@ Usage:
     <python-tool-command> /path/to/openapi.json    # Read from local JSON file
     <python-tool-command> -s auth                  # Search paths containing "auth"
     <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
-    <python-tool-command> -h                       # Show help
+    <python-tool-command> -v, --version            # Show version
+    <python-tool-command> -h, --help               # Show help
 """
 
 
@@ -51,6 +65,9 @@ def parse_args(argv: list[str] | None = None) -> Args:
             i += 1
         elif argv[i] in ("-h", "--help"):
             print(HELP_TEXT)
+            sys.exit(0)
+        elif argv[i] in ("-v", "--version"):
+            print(f"api-tree {get_version()}")
             sys.exit(0)
         elif argv[i].startswith("-"):
             print(f"Error: Unknown option '{argv[i]}'", file=sys.stderr)

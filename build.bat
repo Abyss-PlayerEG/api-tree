@@ -30,9 +30,16 @@ echo [1/4] Cleaning previous build artifacts...
 if exist build rmdir /s /q build
 if exist dist  rmdir /s /q dist
 
+REM Generate version from current date (yy.M.d)
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.M.d'"') do set "VERSION=%%i"
+if not defined VERSION set "VERSION=26.5.31"
+
 REM Generate single-file version from src/app/
-echo [1.5/4] Generating single-file api-tree.py...
-uv run python src/tools/merge_src.py
+echo [1.5/4] Generating single-file api-tree.py (v%VERSION%)...
+uv run python src/tools/merge_src.py %VERSION%
+
+REM Patch version in src/__init__.py for PyInstaller
+uv run python src/tools/patch_version.py %VERSION%
 
 REM Run PyInstaller via uv (onedir for fast startup)
 echo [2/4] Building executable...
@@ -40,8 +47,13 @@ uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico 
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
+    REM Restore original file
+    uv run python src/tools/patch_version.py restore
     exit /b 1
 )
+
+REM Restore original file
+uv run python src/tools/patch_version.py restore
 
 REM Show executable result
 echo [3/4] Executable build complete.
@@ -58,10 +70,6 @@ if exist dist\api-tree\api-tree.exe (
 
 REM ── Generate installer with Inno Setup ──────────────
 echo [4/4] Generating installer...
-
-REM Generate version from current date (yy.M.dd)
-for /f "tokens=*" %%i in ('powershell -NoProfile -Command "Get-Date -Format 'yy.M.dd'"') do set "VERSION=%%i"
-if not defined VERSION set "VERSION=26.5.30"
 
 set ISCC=
 
