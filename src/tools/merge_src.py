@@ -184,6 +184,39 @@ def strip_module_docstrings(code: str) -> str:
     return "\n".join(result_lines)
 
 
+def minify_code(code: str) -> str:
+    """Minify code using ast.unparse(). Preserves shebang and module docstring."""
+    lines = code.splitlines()
+    header_parts = []
+    body_start = 0
+
+    # Preserve shebang
+    if lines and lines[0].startswith("#!"):
+        header_parts.append(lines[0])
+        body_start = 1
+
+    # Parse AST
+    tree = ast.parse(code)
+
+    # Preserve module docstring
+    doc = ast.get_docstring(tree)
+    if doc:
+        # Remove the docstring Expr node from AST so unparse won't include it
+        if (tree.body and isinstance(tree.body[0], ast.Expr)
+                and isinstance(tree.body[0].value, ast.Constant)
+                and isinstance(tree.body[0].value.value, str)):
+            tree.body.pop(0)
+        header_parts.append(f'"""{doc}"""')
+
+    # Unparse AST to minimal code
+    minified = ast.unparse(tree)
+    # ast.unparse joins statements with \n, ensure single newlines
+    minified = "\n".join(line for line in minified.splitlines() if line.strip())
+
+    result = "\n".join(header_parts) + "\n" + minified + "\n"
+    return result
+
+
 def post_process(code: str) -> str:
     """Apply AST-based optimizations to merged code."""
     # 1. Remove duplicate function/class definitions
@@ -192,6 +225,8 @@ def post_process(code: str) -> str:
     code = remove_wrapper_functions(code)
     # 3. Clean up multiple blank lines
     code = re.sub(r"\n{3,}", "\n\n", code)
+    # 4. Minify using ast.unparse()
+    code = minify_code(code)
     return code
 
 
