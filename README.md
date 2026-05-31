@@ -21,6 +21,10 @@ A lightweight command-line tool that renders OpenAPI (Swagger) specifications as
 
 - **HTML Image Export** — Use the `--html` flag to save the tree as a styled HTML file with Catppuccin light/dark theme toggle. Output goes to your Downloads folder.
 
+- **Agent Optimized Output** — Use `--agent-output` to generate LLM-friendly formats (markdown/json/curl) optimized for AI agents and automated workflows.
+
+- **RAG Knowledge Base Output** — Use `--rag-output` to generate structured chunks (jsonl/json) for vector databases and RAG retrieval systems.
+
 - **Smart Path Merging** — Automatically collapses single-child path segments for cleaner output.
 - **Springdoc Compatible** — Auto-appends `/v3/api-docs` to the provided URL.
 
@@ -45,6 +49,9 @@ python main.py http://localhost:9090    # Custom server address
 python main.py /path/to/openapi.json   # Read from local file
 python main.py -s auth                  # Search endpoints containing 'auth'
 python main.py --html                   # Also export as HTML to ~/Downloads/
+python main.py --agent-output markdown  # LLM-optimized output (markdown/json/curl)
+python main.py --rag-output jsonl       # RAG knowledge base output (jsonl/json)
+python main.py --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
 python main.py -h                       # Show help
 ```
 

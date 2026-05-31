@@ -8,6 +8,9 @@ Usage:
     <python-tool-command> /path/to/openapi.json    # Read from local JSON file
     <python-tool-command> -s auth                  # Search paths containing "auth"
     <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
+    <python-tool-command> --agent-output markdown  # Output optimized for LLM agents (markdown/json/curl)
+    <python-tool-command> --rag-output jsonl       # Output for RAG knowledge base (jsonl/json)
+    <python-tool-command> --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
     <python-tool-command> -v, --version            # Show version
     <python-tool-command> -h, --help               # Show help
 

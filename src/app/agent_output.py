@@ -1,0 +1,257 @@
+"""Agent-optimized output formats for LLM consumption."""
+
+import json
+from typing import Any
+
+from .tree import sort_children, TreeMatcher
+
+
+def generate_agent_output(node: dict, title: str, total: int, 
+                         format_type: str, search: str = "") -> str:
+    """Generate agent-optimized output in specified format.
+    
+    Args:
+        node: Root node of API tree
+        title: API title
+        total: Total endpoint count
+        format_type: Output format (markdown, json, curl)
+        search: Optional search filter
+    
+    Returns:
+        Formatted string output
+    """
+    if format_type == "markdown":
+        return _generate_markdown(node, title, total, search)
+    elif format_type == "json":
+        return _generate_json(node, title, total, search)
+    elif format_type == "curl":
+        return _generate_curl(node, title, total, search)
+    else:
+        raise ValueError(f"Unsupported format: {format_type}")
+
+
+def _generate_markdown(node: dict, title: str, total: int, search: str = "") -> str:
+    """Generate clean Markdown format optimized for LLM consumption."""
+    lines = []
+    lines.append(f"# {title} API Endpoints")
+    lines.append(f"Total: {total} endpoints")
+    if search:
+        lines.append(f"Filtered by: {search}")
+    lines.append("")
+    
+    matcher = TreeMatcher(node, search) if search else None
+    _walk_markdown(node, lines, "", "", matcher, search)
+    
+    return "\n".join(lines)
+
+
+def _walk_markdown(node: dict, lines: list, prefix: str, path_accum: str,
+                   matcher: TreeMatcher = None, search: str = ""):
+    """Recursively walk tree and generate Markdown lines."""
+    children = sort_children(node)
+    eps = node["endpoints"]
+    
+    # Apply search filter
+    if search:
+        if matcher:
+            if not matcher.matches(node):
+                return
+            visible = matcher.visible_children(node)
+        else:
+            visible = [(cn, cn_node) for cn, cn_node in children 
+                      if _matches_search(cn_node, search)]
+    else:
+        visible = children
+    
+    # Filter endpoints if searching
+    if search and eps:
+        eps = [ep for ep in eps if (
+            search in ep["path_lower"]
+            or search in ep["summary_lower"]
+            or search in ep["method_lower"]
+        )]
+    
+    # Single child chain merge (only when no own endpoints)
+    if prefix and len(visible) == 1 and not eps:
+        merged = f"{path_accum}/{prefix}" if path_accum else prefix
+        _walk_markdown(visible[0][1], lines, visible[0][0], merged, matcher, search)
+        return
+    
+    # Current path
+    current_path = f"{path_accum}/{prefix}" if path_accum else prefix
+    if prefix:
+        if eps:
+            # This node has endpoints - show them
+            lines.append(f"## /{current_path}")
+            lines.append("")
+            for ep in eps:
+                method = ep["method"]
+                path = ep["path"]
+                summary = ep["summary"]
+                lines.append(f"- **{method}** `{path}`")
+                if summary:
+                    lines.append(f"  {summary}")
+            lines.append("")
+        elif visible:
+            # This is a directory node
+            pass  # Don't output directory headers, just endpoints
+    
+    # Process children
+    for child_name, child_node in visible:
+        _walk_markdown(child_node, lines, child_name, current_path, matcher, search)
+
+
+def _generate_json(node: dict, title: str, total: int, search: str = "") -> str:
+    """Generate structured JSON format for programmatic consumption."""
+    matcher = TreeMatcher(node, search) if search else None
+    
+    result = {
+        "title": title,
+        "total_endpoints": total,
+        "filtered_by": search if search else None,
+        "endpoints": []
+    }
+    
+    _collect_endpoints(node, result["endpoints"], "", "", matcher, search)
+    
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+def _collect_endpoints(node: dict, endpoints: list, prefix: str, path_accum: str,
+                      matcher: TreeMatcher = None, search: str = ""):
+    """Recursively collect all endpoints into flat list."""
+    children = sort_children(node)
+    eps = node["endpoints"]
+    
+    # Apply search filter
+    if search:
+        if matcher:
+            if not matcher.matches(node):
+                return
+            visible = matcher.visible_children(node)
+        else:
+            visible = [(cn, cn_node) for cn, cn_node in children 
+                      if _matches_search(cn_node, search)]
+    else:
+        visible = children
+    
+    # Filter endpoints if searching
+    if search and eps:
+        eps = [ep for ep in eps if (
+            search in ep["path_lower"]
+            or search in ep["summary_lower"]
+            or search in ep["method_lower"]
+        )]
+    
+    # Single child chain merge (only when no own endpoints)
+    if prefix and len(visible) == 1 and not eps:
+        merged = f"{path_accum}/{prefix}" if path_accum else prefix
+        _collect_endpoints(visible[0][1], endpoints, visible[0][0], merged, matcher, search)
+        return
+    
+    # Current path
+    current_path = f"{path_accum}/{prefix}" if path_accum else prefix
+    
+    # Add endpoints
+    for ep in eps:
+        endpoint_data = {
+            "method": ep["method"],
+            "path": ep["path"],
+            "summary": ep["summary"],
+            "path_prefix": f"/{current_path}" if current_path else "/"
+        }
+        endpoints.append(endpoint_data)
+    
+    # Process children
+    for child_name, child_node in visible:
+        _collect_endpoints(child_node, endpoints, child_name, current_path, matcher, search)
+
+
+def _generate_curl(node: dict, title: str, total: int, search: str = "") -> str:
+    """Generate CURL request templates for each endpoint."""
+    matcher = TreeMatcher(node, search) if search else None
+    
+    lines = []
+    lines.append(f"# CURL templates for {title} API")
+    lines.append(f"# Total: {total} endpoints")
+    if search:
+        lines.append(f"# Filtered by: {search}")
+    lines.append("")
+    lines.append("# Replace BASE_URL with your actual server address")
+    lines.append("# Replace AUTH_TOKEN with your actual authentication token")
+    lines.append("")
+    
+    _collect_curl_templates(node, lines, "", "", matcher, search)
+    
+    return "\n".join(lines)
+
+
+def _collect_curl_templates(node: dict, lines: list, prefix: str, path_accum: str,
+                           matcher: TreeMatcher = None, search: str = ""):
+    """Recursively collect CURL templates for all endpoints."""
+    children = sort_children(node)
+    eps = node["endpoints"]
+    
+    # Apply search filter
+    if search:
+        if matcher:
+            if not matcher.matches(node):
+                return
+            visible = matcher.visible_children(node)
+        else:
+            visible = [(cn, cn_node) for cn, cn_node in children 
+                      if _matches_search(cn_node, search)]
+    else:
+        visible = children
+    
+    # Filter endpoints if searching
+    if search and eps:
+        eps = [ep for ep in eps if (
+            search in ep["path_lower"]
+            or search in ep["summary_lower"]
+            or search in ep["method_lower"]
+        )]
+    
+    # Single child chain merge (only when no own endpoints)
+    if prefix and len(visible) == 1 and not eps:
+        merged = f"{path_accum}/{prefix}" if path_accum else prefix
+        _collect_curl_templates(visible[0][1], lines, visible[0][0], merged, matcher, search)
+        return
+    
+    # Current path
+    current_path = f"{path_accum}/{prefix}" if path_accum else prefix
+    
+    # Generate CURL templates
+    for ep in eps:
+        method = ep["method"]
+        path = ep["path"]
+        summary = ep["summary"]
+        
+        lines.append(f"# {summary}" if summary else f"# {method} {path}")
+        lines.append(f"curl -X {method} \\")
+        lines.append(f"  'BASE_URL{path}' \\")
+        lines.append(f"  -H 'Authorization: Bearer AUTH_TOKEN' \\")
+        lines.append(f"  -H 'Content-Type: application/json'")
+        
+        # Add example request body for POST/PUT/PATCH
+        if method in ("POST", "PUT", "PATCH"):
+            lines.append(f"  -d '{{}}'")
+        
+        lines.append("")
+    
+    # Process children
+    for child_name, child_node in visible:
+        _collect_curl_templates(child_node, lines, child_name, current_path, matcher, search)
+
+
+def _matches_search(node: dict, search: str) -> bool:
+    """Check if node or its subtree matches search keyword."""
+    for ep in node["endpoints"]:
+        if (search in ep["path_lower"]
+                or search in ep["summary_lower"]
+                or search in ep["method_lower"]):
+            return True
+    for child in node["children"].values():
+        if _matches_search(child, search):
+            return True
+    return False
