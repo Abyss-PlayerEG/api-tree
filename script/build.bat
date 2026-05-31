@@ -45,7 +45,7 @@ set /p "PREFIX=Version prefix (Enter to skip): "
 if defined PREFIX set "VERSION=%PREFIX%-%VERSION%"
 
 REM Generate single-file version from src/app/
-echo [1.5/4] Generating single-file api-tree.py (v%VERSION%)...
+echo [1.5/4] Generating single-file api-tree-%VERSION%.py...
 uv run python src/tools/merge_src.py %VERSION%
 
 REM Run PyInstaller via uv (onedir for fast startup)

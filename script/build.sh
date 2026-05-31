@@ -37,7 +37,7 @@ if [[ -n "$PREFIX" ]]; then
 fi
 
 # Generate single-file version
-echo "[1.5/4] Generating single-file api-tree.py (v${VERSION})..."
+echo "[1.5/4] Generating single-file api-tree-${VERSION}.py..."
 uv run python src/tools/merge_src.py "$VERSION"
 
 # Run PyInstaller via uv (onedir for fast startup)

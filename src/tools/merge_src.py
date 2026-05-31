@@ -242,7 +242,7 @@ def main():
     
     project_root = Path(__file__).parent.parent.parent
     src_dir = project_root / "src" / "app"
-    output_file = project_root / "dist" / "api-tree.py"
+    output_file = project_root / "dist" / f"api-tree-{version}.py"
 
     # Read docstring from main.py for the header
     main_py = project_root / "src" / "main.py"
