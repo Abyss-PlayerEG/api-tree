@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Modules that must be loaded first (dependencies)
-PRIORITY_MODULES = ["color.py", "_version.py", "args.py"]
+PRIORITY_MODULES = ["color.py", "_version.py", "config.py", "args.py"]
 # Module that must be loaded last (entry point)
 ENTRY_MODULE = "cli.py"
 
@@ -58,18 +58,39 @@ def extract_imports(filepath: Path) -> set[str]:
 
 
 def extract_code(filepath: Path) -> str:
-    """Extract module code, removing imports and trailing whitespace."""
+    """Extract module code using AST to remove only module-level imports.
+    
+    Function-local imports (e.g. `import ctypes` inside a function body)
+    are preserved intact.
+    """
     code = filepath.read_text(encoding="utf-8")
-    
-    # Remove all import lines (relative and standard)
-    lines = []
-    for line in code.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("import ") or stripped.startswith("from "):
-            continue
-        lines.append(line)
-    code = "\n".join(lines)
-    
+
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return code.strip() + "\n"
+
+    # Find module-level import lines to remove
+    lines_to_remove: set[int] = set()
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.Import):
+            assert node.end_lineno is not None
+            for i in range(node.lineno - 1, node.end_lineno):
+                lines_to_remove.add(i)
+        elif isinstance(node, ast.ImportFrom):
+            # Keep only absolute, non-src imports (same logic as extract_imports)
+            if node.level > 0 or (node.module or "").startswith("src"):
+                assert node.end_lineno is not None
+                for i in range(node.lineno - 1, node.end_lineno):
+                    lines_to_remove.add(i)
+
+    if not lines_to_remove:
+        return code.strip() + "\n"
+
+    lines = code.splitlines()
+    result = [line for i, line in enumerate(lines) if i not in lines_to_remove]
+    code = "\n".join(result)
+
     # Clean up multiple blank lines
     code = re.sub(r"\n{3,}", "\n\n", code)
     return code.strip() + "\n"
@@ -188,9 +209,13 @@ def strip_module_docstrings(code: str) -> str:
 
 
 def minify_code(code: str) -> str:
-    """Minify code using ast.unparse(). Preserves shebang and module docstring."""
+    """Minify code while preserving # type: ignore comments.
+
+    Uses line-by-line processing instead of ast.unparse() to keep
+    inline type-checking annotations intact.
+    """
     lines = code.splitlines()
-    header_parts = []
+    header_parts: list[str] = []
     body_start = 0
 
     # Preserve shebang
@@ -198,25 +223,43 @@ def minify_code(code: str) -> str:
         header_parts.append(lines[0])
         body_start = 1
 
-    # Parse AST
+    # Parse AST to locate module docstring
     tree = ast.parse(code)
-
-    # Preserve module docstring
     doc = ast.get_docstring(tree)
-    if doc:
-        # Remove the docstring Expr node from AST so unparse won't include it
-        if (tree.body and isinstance(tree.body[0], ast.Expr)
-                and isinstance(tree.body[0].value, ast.Constant)
-                and isinstance(tree.body[0].value.value, str)):
-            tree.body.pop(0)
+    doc_lines_to_remove: set[int] = set()
+    if doc and tree.body and isinstance(tree.body[0], ast.Expr) \
+            and isinstance(tree.body[0].value, ast.Constant) \
+            and isinstance(tree.body[0].value.value, str):
+        doc_node = tree.body[0]
+        assert doc_node.end_lineno is not None
+        for i in range(doc_node.lineno - 1, doc_node.end_lineno):
+            doc_lines_to_remove.add(i)
         header_parts.append(f'"""{doc}"""')
 
-    # Unparse AST to minimal code
-    minified = ast.unparse(tree)
-    # ast.unparse joins statements with \n, ensure single newlines
-    minified = "\n".join(line for line in minified.splitlines() if line.strip())
+    # Line-by-line: strip blanks, docstring, pure comments (keep type: ignore)
+    result_body: list[str] = []
+    for i, line in enumerate(lines):
+        if i < body_start:
+            continue
+        if i in doc_lines_to_remove:
+            continue
 
-    result = "\n".join(header_parts) + "\n" + minified + "\n"
+        stripped = line.strip()
+
+        # Skip blank lines
+        if not stripped:
+            continue
+
+        # Keep # type: ignore comments (inline or standalone)
+        if stripped.startswith("#"):
+            if "type:" in stripped:
+                result_body.append(line)
+            # Skip other pure comment lines
+            continue
+
+        result_body.append(line)
+
+    result = "\n".join(header_parts) + "\n" + "\n".join(result_body) + "\n"
     return result
 
 

@@ -1,5 +1,6 @@
 """Command-line interface entry point."""
 
+import io
 import sys
 
 from .args import parse_args
@@ -8,7 +9,6 @@ from .core import run
 
 def _setup_encoding():
     """Ensure UTF-8 encoding for stdout/stderr and console, cross-platform."""
-    import io
     for stream in (sys.stdout, sys.stderr):
         if isinstance(stream, io.TextIOWrapper) and stream.encoding != 'utf-8':
             try:
