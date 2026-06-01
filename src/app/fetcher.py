@@ -5,14 +5,15 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from typing import Any
 from urllib.parse import urlparse
 
 
-def fetch_openapi(source: str) -> dict:
+def fetch_openapi(source: str) -> dict[str, Any]:
     """Fetch OpenAPI JSON from URL or local file."""
     if os.path.isfile(source):
         with open(source, "r", encoding="utf-8") as f:
-            return json.load(f)
+            return json.load(f)  # type: ignore[no-any-return]
 
     # Check if full URL: use directly if contains specific path
     parsed = urlparse(source)
@@ -23,7 +24,7 @@ def fetch_openapi(source: str) -> dict:
 
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            return json.loads(resp.read().decode("utf-8"))  # type: ignore[no-any-return]
     except (urllib.error.URLError, ValueError) as e:
         reason = getattr(e, 'reason', str(e))
         print(f"Error: Cannot connect to {url}\n  {reason}", file=sys.stderr)

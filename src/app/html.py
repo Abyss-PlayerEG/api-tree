@@ -3,7 +3,7 @@
 from datetime import datetime
 
 from .config import config
-from .tree import sort_children, _leaf_name_no_search, TreeMatcher
+from .tree import sort_children, _leaf_name_no_search, TreeMatcher, TreeNode, EndpointDict
 
 
 def _escape(text: str) -> str:
@@ -11,7 +11,7 @@ def _escape(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
-def render_html_tree(node: dict, title: str, total: int, search: str = "") -> str:
+def render_html_tree(node: TreeNode, title: str, total: int, search: str = "") -> str:
     """Render API tree as an HTML file. Returns the output file path."""
     METHOD_CLASS = {
         "GET": "method-get", "POST": "method-post", "PUT": "method-put",
@@ -21,13 +21,15 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
     matcher = TreeMatcher(node, search) if search else None
     lines = []
 
-    def walk(n, prefix, is_last, path_acc, name, extra_eps=None, name_pad=0):
+    def walk(n: TreeNode, prefix: str, is_last: bool, path_acc: str, name: str,
+             extra_eps: list[EndpointDict] | None = None, name_pad: int = 0) -> None:
         children = sort_children(n)
         eps = n["endpoints"]
         if extra_eps:
             eps = extra_eps + eps
 
         if search:
+            assert matcher is not None
             matched = matcher.matches(n)
             if not matched and extra_eps:
                 matched = any(
@@ -40,13 +42,14 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
                 return
 
         if search:
+            assert matcher is not None
             visible = matcher.visible_children(n)
         else:
             visible = children
 
         # Calculate max leaf path width
         if visible:
-            child_pad = matcher.max_leaf_width(n) if search else _max_leaf_width_no_search(n)
+            child_pad = matcher.max_leaf_width(n) if (search and matcher is not None) else _max_leaf_width_no_search(n)
         else:
             child_pad = 0
 
@@ -184,7 +187,7 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
 
 
 
-def _max_leaf_width_no_search(node: dict) -> int:
+def _max_leaf_width_no_search(node: TreeNode) -> int:
     """Calculate max leaf path width for all children (no search filter)."""
     pad = 0
     for cn, cn_node in sort_children(node):

@@ -1,12 +1,11 @@
 """Agent-optimized output formats for LLM consumption."""
 
 import json
-from typing import Any
 
-from .tree import sort_children, TreeMatcher
+from .tree import sort_children, TreeMatcher, TreeNode, EndpointDict
 
 
-def generate_agent_output(node: dict, title: str, total: int, 
+def generate_agent_output(node: TreeNode, title: str, total: int, 
                          format_type: str, search: str = "") -> str:
     """Generate agent-optimized output in specified format.
     
@@ -30,7 +29,7 @@ def generate_agent_output(node: dict, title: str, total: int,
         raise ValueError(f"Unsupported format: {format_type}")
 
 
-def _generate_markdown(node: dict, title: str, total: int, search: str = "") -> str:
+def _generate_markdown(node: TreeNode, title: str, total: int, search: str = "") -> str:
     """Generate clean Markdown format optimized for LLM consumption."""
     lines = []
     lines.append(f"# {title} API Endpoints")
@@ -45,8 +44,8 @@ def _generate_markdown(node: dict, title: str, total: int, search: str = "") -> 
     return "\n".join(lines)
 
 
-def _walk_markdown(node: dict, lines: list, prefix: str, path_accum: str,
-                   matcher: TreeMatcher = None, search: str = ""):
+def _walk_markdown(node: TreeNode, lines: list[str], prefix: str, path_accum: str,
+                   matcher: TreeMatcher | None = None, search: str = "") -> None:
     """Recursively walk tree and generate Markdown lines."""
     children = sort_children(node)
     eps = node["endpoints"]
@@ -101,24 +100,26 @@ def _walk_markdown(node: dict, lines: list, prefix: str, path_accum: str,
         _walk_markdown(child_node, lines, child_name, current_path, matcher, search)
 
 
-def _generate_json(node: dict, title: str, total: int, search: str = "") -> str:
+def _generate_json(node: TreeNode, title: str, total: int, search: str = "") -> str:
     """Generate structured JSON format for programmatic consumption."""
     matcher = TreeMatcher(node, search) if search else None
     
-    result = {
+    result: dict[str, object] = {
         "title": title,
         "total_endpoints": total,
         "filtered_by": search if search else None,
         "endpoints": []
     }
     
-    _collect_endpoints(node, result["endpoints"], "", "", matcher, search)
+    endpoints_list: list[dict[str, object]] = []
+    _collect_endpoints(node, endpoints_list, "", "", matcher, search)
+    result["endpoints"] = endpoints_list
     
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
-def _collect_endpoints(node: dict, endpoints: list, prefix: str, path_accum: str,
-                      matcher: TreeMatcher = None, search: str = ""):
+def _collect_endpoints(node: TreeNode, endpoints: list[dict[str, object]], prefix: str, path_accum: str,
+                      matcher: TreeMatcher | None = None, search: str = "") -> None:
     """Recursively collect all endpoints into flat list."""
     children = sort_children(node)
     eps = node["endpoints"]
@@ -154,7 +155,7 @@ def _collect_endpoints(node: dict, endpoints: list, prefix: str, path_accum: str
     
     # Add endpoints
     for ep in eps:
-        endpoint_data = {
+        endpoint_data: dict[str, object] = {
             "method": ep["method"],
             "path": ep["path"],
             "summary": ep["summary"],
@@ -167,7 +168,7 @@ def _collect_endpoints(node: dict, endpoints: list, prefix: str, path_accum: str
         _collect_endpoints(child_node, endpoints, child_name, current_path, matcher, search)
 
 
-def _generate_curl(node: dict, title: str, total: int, search: str = "") -> str:
+def _generate_curl(node: TreeNode, title: str, total: int, search: str = "") -> str:
     """Generate CURL request templates for each endpoint."""
     matcher = TreeMatcher(node, search) if search else None
     
@@ -186,8 +187,8 @@ def _generate_curl(node: dict, title: str, total: int, search: str = "") -> str:
     return "\n".join(lines)
 
 
-def _collect_curl_templates(node: dict, lines: list, prefix: str, path_accum: str,
-                           matcher: TreeMatcher = None, search: str = ""):
+def _collect_curl_templates(node: TreeNode, lines: list[str], prefix: str, path_accum: str,
+                           matcher: TreeMatcher | None = None, search: str = "") -> None:
     """Recursively collect CURL templates for all endpoints."""
     children = sort_children(node)
     eps = node["endpoints"]
@@ -244,7 +245,7 @@ def _collect_curl_templates(node: dict, lines: list, prefix: str, path_accum: st
         _collect_curl_templates(child_node, lines, child_name, current_path, matcher, search)
 
 
-def _matches_search(node: dict, search: str) -> bool:
+def _matches_search(node: TreeNode, search: str) -> bool:
     """Check if node or its subtree matches search keyword."""
     for ep in node["endpoints"]:
         if (search in ep["path_lower"]

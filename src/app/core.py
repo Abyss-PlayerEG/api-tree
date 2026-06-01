@@ -70,27 +70,28 @@ def run(args: Args) -> None:
         _show_config()
         return
     
-    spec = fetch_openapi(args.source)
-    paths = spec.get("paths", {})
+    spec: dict[str, object] = fetch_openapi(args.source)
+    paths: object = spec.get("paths", {})
 
     if not paths:
         print("No API paths found", file=sys.stderr)
         sys.exit(1)
 
-    tree = build_tree(paths)
+    tree = build_tree(paths)  # type: ignore[arg-type]
     total = count_endpoints(tree)
 
-    title = spec.get("info", {}).get("title", "API")
+    info = spec.get("info", {})
+    title: str = str(info.get("title", "API")) if isinstance(info, dict) else "API"
     
     # Handle agent output mode
     if args.agent_output:
-        output = generate_agent_output(tree, title, total, args.agent_output, args.search)
+        output = generate_agent_output(tree, str(title), total, args.agent_output, args.search)
         print(output)
         return
     
     # Handle RAG output mode
     if args.rag_output:
-        output = generate_rag_output(tree, title, total, args.rag_output, 
+        output = generate_rag_output(tree, str(title), total, args.rag_output, 
                                     args.rag_chunk_size, args.search)
         print(output)
         return
@@ -108,5 +109,5 @@ def run(args: Args) -> None:
         print(f"{Color.DIM}Total: {total} endpoints{Color.RESET}")
 
     if args.output_html:
-        output_path = render_html_tree(tree, title, total, args.search)
+        output_path = render_html_tree(tree, str(title), total, args.search)
         print(f"{Color.DIM}HTML saved to: {output_path}{Color.RESET}")

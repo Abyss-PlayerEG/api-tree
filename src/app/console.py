@@ -1,13 +1,13 @@
 """Console output for API tree."""
 
 from .color import Color
-from .tree import sort_children, TreeMatcher, _matches, _leaf_name, _leaf_name_no_search
+from .tree import sort_children, TreeMatcher, _matches, _leaf_name, _leaf_name_no_search, TreeNode, EndpointDict
 
 
-def print_tree(node: dict, prefix: str = "", is_last: bool = True,
+def print_tree(node: TreeNode, prefix: str = "", is_last: bool = True,
                search: str = "", name: str = "", path_accum: str = "",
-               extra_eps: list = None, name_pad: int = 0,
-               matcher: TreeMatcher = None):
+               extra_eps: list[EndpointDict] | None = None, name_pad: int = 0,
+               matcher: TreeMatcher | None = None) -> None:
     """Print API tree to terminal with colors."""
     children = sort_children(node)
     eps = node["endpoints"]

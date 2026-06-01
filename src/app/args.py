@@ -18,11 +18,11 @@ def get_version() -> str:
     """Get application version."""
     # Single-file distribution: __version__ defined at module level
     if "__version__" in globals():
-        return globals()["__version__"]
+        return str(globals()["__version__"])
     # Package: import from _version module
     try:
-        from src._version import __version__
-        return __version__
+        from src._version import __version__  # type: ignore[import-not-found]
+        return str(__version__)
     except ImportError:
         return "DEV"
 

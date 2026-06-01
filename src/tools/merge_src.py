@@ -75,7 +75,7 @@ def extract_code(filepath: Path) -> str:
     return code.strip() + "\n"
 
 
-def _is_wrapper(node: ast.FunctionDef) -> tuple[bool, str]:
+def _is_wrapper(node: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[bool, str]:
     """Check if a function is a trivial wrapper (just calls another function).
     Returns (True, target_name) or (False, "").
     """
@@ -105,6 +105,7 @@ def deduplicate_functions(code: str) -> str:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             if node.name in seen:
                 # Remove this duplicate definition
+                assert node.end_lineno is not None
                 for i in range(node.lineno - 1, node.end_lineno):
                     lines_to_remove.add(i)
             else:
@@ -142,6 +143,7 @@ def remove_wrapper_functions(code: str) -> str:
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             if node.name in wrappers:
+                assert node.end_lineno is not None
                 for i in range(node.lineno - 1, node.end_lineno):
                     lines_to_remove.add(i)
 
@@ -171,6 +173,7 @@ def strip_module_docstrings(code: str) -> str:
     for node in ast.iter_child_nodes(tree):
         # Remove standalone string literals (module docstrings, section headers)
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+            assert node.end_lineno is not None
             for i in range(node.lineno - 1, node.end_lineno):
                 lines_to_remove.add(i)
 

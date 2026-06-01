@@ -1,9 +1,27 @@
 """Tree structure building and traversal utilities."""
 
+from typing import TypedDict, NotRequired
 
-def build_tree(paths: dict) -> dict:
+class EndpointDict(TypedDict):
+    """Typed representation of an API endpoint."""
+    method: str
+    method_lower: str
+    summary: str
+    summary_lower: str
+    path: str
+    path_lower: str
+
+
+class TreeNode(TypedDict):
+    """Typed representation of a tree node."""
+    children: dict[str, "TreeNode"]
+    endpoints: list[EndpointDict]
+    sorted_children: NotRequired[list[tuple[str, "TreeNode"]]]
+
+
+def build_tree(paths: dict[str, dict[str, object]]) -> TreeNode:
     """Build hierarchical tree from OpenAPI paths."""
-    root = {"children": {}, "endpoints": []}
+    root: TreeNode = {"children": {}, "endpoints": []}
 
     for path, methods in paths.items():
         segments = [s for s in path.split("/") if s]
@@ -30,7 +48,7 @@ def build_tree(paths: dict) -> dict:
     return root
 
 
-def _sort_tree(node: dict) -> None:
+def _sort_tree(node: TreeNode) -> None:
     """Recursively sort children in-place: directories first, then alphabetically."""
     for child in node["children"].values():
         _sort_tree(child)
@@ -40,7 +58,7 @@ def _sort_tree(node: dict) -> None:
     )
 
 
-def sort_children(node: dict) -> list:
+def sort_children(node: TreeNode) -> list[tuple[str, TreeNode]]:
     """Return pre-sorted children list."""
     return node.get("sorted_children", sorted(
         node["children"].items(),
@@ -48,7 +66,7 @@ def sort_children(node: dict) -> list:
     ))
 
 
-def count_endpoints(node: dict) -> int:
+def count_endpoints(node: TreeNode) -> int:
     """Recursively count total endpoints."""
     total = len(node["endpoints"])
     for child in node["children"].values():
@@ -59,13 +77,13 @@ def count_endpoints(node: dict) -> int:
 class TreeMatcher:
     """Pre-computed match results with memoization to avoid redundant recursion."""
 
-    def __init__(self, root: dict, search: str):
+    def __init__(self, root: TreeNode, search: str):
         self._search = search
         self._match_cache: dict[int, bool] = {}
-        self._leaf_cache: dict[tuple, str | None] = {}
+        self._leaf_cache: dict[tuple[int, str], str | None] = {}
         self._match(root)
 
-    def _match(self, node: dict) -> bool:
+    def _match(self, node: TreeNode) -> bool:
         nid = id(node)
         if nid in self._match_cache:
             return self._match_cache[nid]
@@ -83,16 +101,16 @@ class TreeMatcher:
         self._match_cache[nid] = result
         return result
 
-    def matches(self, node: dict) -> bool:
+    def matches(self, node: TreeNode) -> bool:
         """Check if node or its subtree contains the search keyword."""
         return self._match_cache.get(id(node), False)
 
-    def visible_children(self, node: dict) -> list:
+    def visible_children(self, node: TreeNode) -> list[tuple[str, TreeNode]]:
         """Return children filtered by match results."""
         return [(cn, cn_node) for cn, cn_node in sort_children(node)
                 if self.matches(cn_node)]
 
-    def leaf_name(self, node: dict, name: str) -> str | None:
+    def leaf_name(self, node: TreeNode, name: str) -> str | None:
         """Trace chain merges to find a leaf node's final display name."""
         key = (id(node), name)
         if key in self._leaf_cache:
@@ -110,7 +128,7 @@ class TreeMatcher:
         self._leaf_cache[key] = result
         return result
 
-    def max_leaf_width(self, node: dict) -> int:
+    def max_leaf_width(self, node: TreeNode) -> int:
         """Calculate max leaf path width for visible children of a node."""
         pad = 0
         for cn, cn_node in sort_children(node):
@@ -122,7 +140,7 @@ class TreeMatcher:
 
 
 # Keep standalone functions for non-search usage (backward compatible)
-def _matches(node: dict, keyword: str) -> bool:
+def _matches(node: TreeNode, keyword: str) -> bool:
     """Check if node or its subtree contains keyword."""
     for ep in node["endpoints"]:
         if (keyword in ep["path_lower"]
@@ -135,7 +153,7 @@ def _matches(node: dict, keyword: str) -> bool:
     return False
 
 
-def _leaf_name(node: dict, name: str, search: str = "") -> str | None:
+def _leaf_name(node: TreeNode, name: str, search: str = "") -> str | None:
     """Trace chain merges to find a leaf node's final display name."""
     children = sort_children(node)
     if search:
@@ -155,7 +173,7 @@ def _leaf_name(node: dict, name: str, search: str = "") -> str | None:
     return None
 
 
-def _leaf_name_no_search(node: dict, name: str) -> str | None:
+def _leaf_name_no_search(node: TreeNode, name: str) -> str | None:
     """Leaf name calculation without search filter."""
     children = sort_children(node)
     if not children:

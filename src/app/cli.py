@@ -8,8 +8,9 @@ from .core import run
 
 def _setup_encoding():
     """Ensure UTF-8 encoding for stdout/stderr and console, cross-platform."""
+    import io
     for stream in (sys.stdout, sys.stderr):
-        if stream.encoding != 'utf-8':
+        if isinstance(stream, io.TextIOWrapper) and stream.encoding != 'utf-8':
             try:
                 stream.reconfigure(encoding='utf-8')
             except Exception:

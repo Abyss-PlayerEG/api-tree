@@ -7,8 +7,8 @@ from pathlib import Path
 class Config:
     """Configuration manager that reads from ~/.config/api-tree/config.json."""
 
-    _instance = None
-    _config = None
+    _instance: "Config | None" = None
+    _config: dict[str, object]
 
     def __new__(cls):
         """Singleton pattern to ensure only one config instance."""
@@ -34,7 +34,7 @@ class Config:
     def output_dir(self) -> Path:
         """Get output directory from config or use default."""
         output_dir = self._config.get("output_dir")
-        if output_dir:
+        if output_dir and isinstance(output_dir, str):
             output_path = Path(output_dir).expanduser()
             try:
                 output_path.mkdir(parents=True, exist_ok=True)
@@ -49,9 +49,10 @@ class Config:
     @property
     def default_url(self) -> str:
         """Get default URL from config or use default."""
-        return self._config.get("default_url", "http://localhost:8080")
+        val = self._config.get("default_url", "http://localhost:8080")
+        return str(val)
 
-    def get(self, key: str, default=None):
+    def get(self, key: str, default: object = None) -> object:
         """Get a config value by key."""
         return self._config.get(key, default)
 

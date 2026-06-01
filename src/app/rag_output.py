@@ -1,12 +1,11 @@
 """RAG-optimized output for vector database knowledge base."""
 
 import json
-from typing import Any
 
-from .tree import sort_children, TreeMatcher
+from .tree import sort_children, TreeMatcher, TreeNode, EndpointDict
 
 
-def generate_rag_output(node: dict, title: str, total: int, 
+def generate_rag_output(node: TreeNode, title: str, total: int, 
                        format_type: str, chunk_size: int = 10, 
                        search: str = "") -> str:
     """Generate RAG-optimized output in specified format.
@@ -30,7 +29,7 @@ def generate_rag_output(node: dict, title: str, total: int,
         raise ValueError(f"Unsupported RAG format: {format_type}")
 
 
-def _generate_jsonl(node: dict, title: str, total: int, 
+def _generate_jsonl(node: TreeNode, title: str, total: int, 
                    chunk_size: int, search: str = "") -> str:
     """Generate JSON Lines format for RAG knowledge base.
     
@@ -40,15 +39,15 @@ def _generate_jsonl(node: dict, title: str, total: int,
     matcher = TreeMatcher(node, search) if search else None
     
     # Collect all endpoints with their path context
-    endpoints = []
+    endpoints: list[dict[str, object]] = []
     _collect_endpoints_with_context(node, endpoints, "", "", matcher, search)
     
     # Group endpoints by path prefix
     grouped = _group_by_prefix(endpoints)
     
     # Create chunks
-    chunks = []
-    current_chunk = []
+    chunks: list[dict[str, object]] = []
+    current_chunk: list[dict[str, object]] = []
     current_prefix = ""
     
     for prefix, eps in grouped.items():
@@ -74,28 +73,28 @@ def _generate_jsonl(node: dict, title: str, total: int,
         chunks.append(_create_chunk(title, current_prefix, current_chunk))
     
     # Output as JSON Lines
-    lines = []
+    lines: list[str] = []
     for chunk in chunks:
         lines.append(json.dumps(chunk, ensure_ascii=False))
     
     return "\n".join(lines)
 
 
-def _generate_json_chunks(node: dict, title: str, total: int, 
+def _generate_json_chunks(node: TreeNode, title: str, total: int, 
                          chunk_size: int, search: str = "") -> str:
     """Generate JSON format with array of chunks."""
     matcher = TreeMatcher(node, search) if search else None
     
     # Collect all endpoints with their path context
-    endpoints = []
+    endpoints: list[dict[str, object]] = []
     _collect_endpoints_with_context(node, endpoints, "", "", matcher, search)
     
     # Group endpoints by path prefix
     grouped = _group_by_prefix(endpoints)
     
     # Create chunks
-    chunks = []
-    current_chunk = []
+    chunks: list[dict[str, object]] = []
+    current_chunk: list[dict[str, object]] = []
     current_prefix = ""
     
     for prefix, eps in grouped.items():
@@ -132,10 +131,10 @@ def _generate_json_chunks(node: dict, title: str, total: int,
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
-def _collect_endpoints_with_context(node: dict, endpoints: list, 
+def _collect_endpoints_with_context(node: TreeNode, endpoints: list[dict[str, object]], 
                                    prefix: str, path_accum: str,
-                                   matcher: TreeMatcher = None, 
-                                   search: str = ""):
+                                   matcher: TreeMatcher | None = None, 
+                                   search: str = "") -> None:
     """Recursively collect endpoints with their path context."""
     children = sort_children(node)
     eps = node["endpoints"]
@@ -171,7 +170,7 @@ def _collect_endpoints_with_context(node: dict, endpoints: list,
     
     # Add endpoints with context
     for ep in eps:
-        endpoint_data = {
+        endpoint_data: dict[str, object] = {
             "method": ep["method"],
             "path": ep["path"],
             "summary": ep["summary"],
@@ -189,12 +188,12 @@ def _collect_endpoints_with_context(node: dict, endpoints: list,
         _collect_endpoints_with_context(child_node, endpoints, child_name, current_path, matcher, search)
 
 
-def _group_by_prefix(endpoints: list) -> dict:
+def _group_by_prefix(endpoints: list[dict[str, object]]) -> dict[str, list[dict[str, object]]]:
     """Group endpoints by their path prefix for better context."""
-    groups = {}
+    groups: dict[str, list[dict[str, object]]] = {}
     
     for ep in endpoints:
-        prefix = ep["path_prefix"]
+        prefix = str(ep["path_prefix"])
         if prefix not in groups:
             groups[prefix] = []
         groups[prefix].append(ep)
@@ -202,7 +201,7 @@ def _group_by_prefix(endpoints: list) -> dict:
     return groups
 
 
-def _create_chunk(title: str, prefix: str, endpoints: list) -> dict:
+def _create_chunk(title: str, prefix: str, endpoints: list[dict[str, object]]) -> dict[str, object]:
     """Create a RAG chunk with metadata."""
     # Create a descriptive title for the chunk
     if prefix == "/":
@@ -221,7 +220,7 @@ def _create_chunk(title: str, prefix: str, endpoints: list) -> dict:
         if ep["summary"]:
             text_parts.append(f"  Description: {ep['summary']}")
     
-    chunk = {
+    chunk: dict[str, object] = {
         "chunk_id": f"{prefix}_{len(endpoints)}",
         "title": chunk_title,
         "path_prefix": prefix,
@@ -238,7 +237,7 @@ def _create_chunk(title: str, prefix: str, endpoints: list) -> dict:
     return chunk
 
 
-def _matches_search(node: dict, search: str) -> bool:
+def _matches_search(node: TreeNode, search: str) -> bool:
     """Check if node or its subtree matches search keyword."""
     for ep in node["endpoints"]:
         if (search in ep["path_lower"]
