@@ -1,5 +1,9 @@
-"""Command-line interface entry point."""
+"""
+命令行入口
+Command-line interface entry point.
+"""
 
+import io
 import sys
 
 from .args import parse_args
@@ -7,9 +11,12 @@ from .core import run
 
 
 def _setup_encoding():
-    """Ensure UTF-8 encoding for stdout/stderr and console, cross-platform."""
+    """
+    跨平台 UTF-8 编码初始化
+    Ensure UTF-8 encoding for stdout/stderr and console, cross-platform.
+    """
     for stream in (sys.stdout, sys.stderr):
-        if stream.encoding != 'utf-8':
+        if isinstance(stream, io.TextIOWrapper) and stream.encoding != 'utf-8':
             try:
                 stream.reconfigure(encoding='utf-8')
             except Exception:
@@ -24,7 +31,10 @@ def _setup_encoding():
 
 
 def main():
-    """Main entry point."""
+    """
+    主入口:编码初始化 → 参数解析 → 执行主流程
+    Main entry point
+    """
     _setup_encoding()
 
     try:

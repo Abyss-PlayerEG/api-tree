@@ -59,8 +59,10 @@ Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environmen
 [Run]
 ; Add install folder to Windows Defender exclusions (prevents false positives)
 Filename: "powershell.exe"; Parameters: "-NoProfile -Command Add-MpPreference -ExclusionPath '{app}'"; Flags: runhidden waituntilterminated; StatusMsg: "Adding to Windows Defender exclusions..."
-; Show a brief usage hint after install
-Filename: "cmd.exe"; Parameters: "/k cls & echo {#MyAppName} Version: {#MyAppVersion} & ""{app}\{#MyAppExeName}"" -h"; Flags: nowait postinstall skipifsilent; Description: "Show usage"
+; Broadcast environment change to all windows (CMD/PowerShell pick up new PATH)
+Filename: "powershell.exe"; Parameters: "-NoProfile -Command $null = [Environment]::SetEnvironmentVariable('PATH', [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User'), 'Process'); Add-Type -Name WinAPI -Namespace Win32 -MemberDefinition '[DllImport(\""user32.dll\"")] public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);'; $HWND_BROADCAST = [IntPtr]0xffff; $WM_SETTINGCHANGE = 0x001A; $SMTO_ABORTIFHUNG = 0x0002; $null = [Win32.WinAPI]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE, [UIntPtr]::Zero, 'Environment', $SMTO_ABORTIFHUNG, 5000, [ref][UIntPtr]::Zero)"; Flags: runhidden waituntilterminated
+; Show usage hint: reload PATH from registry so api-tree is available immediately
+Filename: "powershell.exe"; Parameters: "-NoProfile -NoExit -Command $env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User'); Clear-Host; Write-Host '{#MyAppName} Version: {#MyAppVersion}'; Write-Host ''; api-tree -h"; Flags: nowait postinstall skipifsilent; Description: "Show usage"
 
 [Code]
 // ─── PATH manipulation (system-wide) ───
@@ -82,6 +84,7 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   Paths: string;
   InstPath: string;
+  ResultCode: Integer;
 begin
   if CurUninstallStep = usPostUninstall then
   begin
@@ -101,6 +104,16 @@ begin
       if (Length(Paths) > 0) and (Paths[1] = ';') then
         Delete(Paths, 1, 1);
       RegWriteStringValue(HKLM, 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment', 'Path', Paths);
+      
+      // Broadcast environment change so open terminals pick up the cleaned PATH
+      Exec('powershell.exe', '-NoProfile -Command ' +
+        '$HWND_BROADCAST=[IntPtr]0xffff;$WM_SETTINGCHANGE=0x001A;' +
+        'Add-Type -Name WinAPI -Namespace Win32 -MemberDefinition ''[DllImport("user32.dll")]' +
+        'public static extern IntPtr SendMessageTimeout(IntPtr hWnd,uint Msg,' +
+        'UIntPtr wParam,string lParam,uint fuFlags,uint uTimeout,out UIntPtr lpdwResult);'';' +
+        '$null=[Win32.WinAPI]::SendMessageTimeout($HWND_BROADCAST,$WM_SETTINGCHANGE,' +
+        '[UIntPtr]::Zero,''Environment'',0x0002,5000,[ref][UIntPtr]::Zero)',
+        '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     end;
   end;
 end;

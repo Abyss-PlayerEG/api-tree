@@ -1,7 +1,11 @@
-"""Command-line argument parsing."""
+"""
+命令行参数解析
+Command-line argument parsing.
+"""
 
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from .config import config
 
 BANNER = """
  █████╗ ██████╗ ██╗    ████████╗██████╗ ███████╗███████╗
@@ -10,51 +14,50 @@ BANNER = """
 ██╔══██║██╔═══╝ ██║       ██║   ██╔══██╗██╔══╝  ██╔══╝
 ██║  ██║██║     ██║       ██║   ██║  ██║███████╗███████╗
 ╚═╝  ╚═╝╚═╝     ╚═╝       ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
-GitHub：https://github.com/Ender-g/api-tree
+GitHub:https://github.com/Ender-g/api-tree
 """
 
+
 def get_version() -> str:
-    """Get application version."""
+    """
+    获取应用版本号
+    Get application version.
+    """
     # Single-file distribution: __version__ defined at module level
     if "__version__" in globals():
-        return globals()["__version__"]
+        return str(globals()["__version__"])
     # Package: import from _version module
     try:
         from src._version import __version__
-        return __version__
+        return str(__version__)
     except ImportError:
         return "DEV"
 
 
 @dataclass
 class Args:
-    """Parsed command-line arguments."""
-    source: str = "http://localhost:8080"
+    """
+    解析后的命令行参数
+    Parsed command-line arguments.
+    """
+    source: str = field(default_factory=lambda: config.default_url)
     search: str = ""
     output_html: bool = False
     agent_output: str = ""  # markdown, json, curl
     rag_output: str = ""  # jsonl, json
     rag_chunk_size: int = 10  # Number of endpoints per RAG chunk
+    init_config: bool = False  # Generate default config file
+    show_config: bool = False  # Show current config
 
 
-HELP_TEXT = """Fetch OpenAPI route information and print as a tree structure in the terminal.
-
-Usage:
-    <python-tool-command>                          # Default: localhost:8080
-    <python-tool-command> http://localhost:9090    # Specify server address
-    <python-tool-command> /path/to/openapi.json    # Read from local JSON file
-    <python-tool-command> -s auth                  # Search paths containing "auth"
-    <python-tool-command> --html                   # Also output as HTML to ~/Downloads/
-    <python-tool-command> --agent-output markdown  # Output optimized for LLM agents (markdown/json/curl)
-    <python-tool-command> --rag-output jsonl       # Output for RAG knowledge base (jsonl/json)
-    <python-tool-command> --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
-    <python-tool-command> -v, --version            # Show version
-    <python-tool-command> -h, --help               # Show help
-"""
+HELP_TEXT = ""
 
 
 def get_help_text() -> str:
-    """Read help text from main module docstring."""
+    """
+    读取帮助文本
+    Read help text from main module docstring.
+    """
     # Single-file: module docstring is at the top of the merged file
     doc = sys.modules.get("__main__", None)
     if doc and doc.__doc__:
@@ -70,16 +73,9 @@ def get_help_text() -> str:
 
 
 def parse_args(argv: list[str] | None = None) -> Args:
-    """Parse command-line arguments.
-    
-    Args:
-        argv: Arguments to parse (defaults to sys.argv[1:])
-    
-    Returns:
-        Parsed Args instance
-    
-    Raises:
-        SystemExit: On invalid arguments
+    """
+    解析命令行参数为 Args 实例
+    Parse command-line arguments.
     """
     if argv is None:
         argv = sys.argv[1:]
@@ -117,6 +113,12 @@ def parse_args(argv: list[str] | None = None) -> Args:
                 print(f"Error: Invalid chunk size '{argv[i + 1]}'. Must be positive integer.", file=sys.stderr)
                 sys.exit(1)
             i += 2
+        elif argv[i] == "--init-config":
+            args.init_config = True
+            i += 1
+        elif argv[i] == "--show-config":
+            args.show_config = True
+            i += 1
         elif argv[i] in ("-h", "--help"):
             print(get_help_text())
             sys.exit(0)
