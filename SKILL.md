@@ -1,4 +1,4 @@
-iyang---
+---
 name: api-tree
 description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的终端树状图。当用户需要查看 API 接口结构、路由树、搜索特定 API 路径/端点，或提到 "api-tree"、"接口树"、"API 树"、"路由列表"、"swagger 接口"、"openapi 接口"、"查看接口"、"API 端点"、"接口结构"、"show api routes" 时使用。
 ---
