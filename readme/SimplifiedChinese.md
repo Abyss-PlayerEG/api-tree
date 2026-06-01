@@ -19,7 +19,7 @@
   | DELETE | 红色 |
   | PATCH | 紫色 |
 
-- **HTML 图像导出** — 使用 `--html` 参数将树状图导出为带样式的 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出至系统下载目录。
+- **HTML 图像导出** — 使用 `--html` 参数将树状图导出为带样式的 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出目录可配置。
 
 - **Agent 优化输出** — 使用 `--agent-output` 参数生成 LLM 友好格式（markdown/json/curl），专为 AI 代理和自动化工作流优化。
 
@@ -48,14 +48,40 @@ python main.py                          # 默认连接 localhost:8080
 python main.py http://localhost:9090    # 指定服务器地址
 python main.py /path/to/openapi.json   # 读取本地 JSON 文件
 python main.py -s auth                  # 搜索含 "auth" 的接口
-python main.py --html                   # 同时导出 HTML 至 ~/Downloads/
+python main.py --html                   # 同时导出 HTML
 python main.py --agent-output markdown  # LLM 优化输出（markdown/json/curl）
 python main.py --rag-output jsonl       # RAG 知识库输出（jsonl/json）
 python main.py --rag-chunk-size 20      # RAG 切片大小（默认：10）
+python main.py --init-config            # 生成默认配置文件
+python main.py --show-config            # 显示当前配置
 python main.py -h                       # 查看帮助
 ```
 
 > 如果 URL 不含路径（如 `http://localhost:9090`），工具会自动追加 `/v3/api-docs`。若接口文档在其他路径，请直接指定完整 URL（如 `http://localhost:9090/swagger.json`）。
+
+## 配置
+
+生成默认配置文件：
+```bash
+python main.py --init-config
+```
+
+显示当前配置：
+```bash
+python main.py --show-config
+```
+
+这会在 `~/.config/api-tree/config.json` 创建默认配置：
+```json
+{
+    "output_dir": "~/Downloads",
+    "default_url": "http://localhost:8080"
+}
+```
+
+编辑此文件可自定义：
+- `output_dir`: HTML 导出和其他文件输出的目录
+- `default_url`: 未指定 URL 时使用的默认 OpenAPI 服务器地址
 
 ## 构建可执行文件
 

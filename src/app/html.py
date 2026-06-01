@@ -1,18 +1,27 @@
-"""HTML output renderer for API tree."""
+"""
+HTML 输出渲染器
+HTML output renderer for API tree.
+"""
 
 from datetime import datetime
-from pathlib import Path
 
-from .tree import sort_children, _matches, _leaf_name, _leaf_name_no_search, TreeMatcher
+from .config import config
+from .tree import sort_children, _leaf_name_no_search, TreeMatcher, TreeNode, EndpointDict
 
 
 def _escape(text: str) -> str:
-    """Escape HTML special characters."""
+    """
+    转义 HTML 特殊字符,防止 XSS
+    Escape HTML special characters.
+    """
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
-def render_html_tree(node: dict, title: str, total: int, search: str = "") -> str:
-    """Render API tree as an HTML file. Returns the output file path."""
+def render_html_tree(node: TreeNode, title: str, total: int, search: str = "") -> str:
+    """
+    将 API 树渲染为独立 HTML 文件,返回输出路径
+    Render API tree as an HTML file. Returns the output file path.
+    """
     METHOD_CLASS = {
         "GET": "method-get", "POST": "method-post", "PUT": "method-put",
         "DELETE": "method-delete", "PATCH": "method-patch",
@@ -21,13 +30,15 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
     matcher = TreeMatcher(node, search) if search else None
     lines = []
 
-    def walk(n, prefix, is_last, path_acc, name, extra_eps=None, name_pad=0):
+    def walk(n: TreeNode, prefix: str, is_last: bool, path_acc: str, name: str,
+             extra_eps: list[EndpointDict] | None = None, name_pad: int = 0) -> None:
         children = sort_children(n)
         eps = n["endpoints"]
         if extra_eps:
             eps = extra_eps + eps
 
         if search:
+            assert matcher is not None
             matched = matcher.matches(n)
             if not matched and extra_eps:
                 matched = any(
@@ -40,13 +51,14 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
                 return
 
         if search:
+            assert matcher is not None
             visible = matcher.visible_children(n)
         else:
             visible = children
 
         # Calculate max leaf path width
         if visible:
-            child_pad = matcher.max_leaf_width(n) if search else _max_leaf_width_no_search(n)
+            child_pad = matcher.max_leaf_width(n) if (search and matcher is not None) else _max_leaf_width_no_search(n)
         else:
             child_pad = 0
 
@@ -174,19 +186,21 @@ def render_html_tree(node: dict, title: str, total: int, search: str = "") -> st
         '</body>\n</html>'
     )
 
-    home = Path.home() / "Downloads"
-    home.mkdir(parents=True, exist_ok=True)
+    output_dir = config.output_dir
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe = "".join(c for c in title if c.isalnum() or c in " _-")[:50].strip().replace(" ", "_")
     fname = f"api-tree_{safe}_{ts}.html" if safe else f"api-tree_{ts}.html"
-    out = home / fname
+    out = output_dir / fname
     out.write_text(html, encoding="utf-8")
     return str(out)
 
 
 
-def _max_leaf_width_no_search(node: dict) -> int:
-    """Calculate max leaf path width for all children (no search filter)."""
+def _max_leaf_width_no_search(node: TreeNode) -> int:
+    """
+    计算所有子节点的最大叶子路径宽度(无搜索过滤)
+    Calculate max leaf path width for all children (no search filter).
+    """
     pad = 0
     for cn, cn_node in sort_children(node):
         leaf = _leaf_name_no_search(cn_node, cn)
