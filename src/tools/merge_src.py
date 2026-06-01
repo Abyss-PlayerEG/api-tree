@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Merge src/ package modules into a single main.py file."""
+"""单文件构建工具。
+
+将 src/app/ 下的所有模块合并为一个独立的 .py 文件，
+用于单文件分发和 PyInstaller 打包。
+
+核心流程：
+1. 自动发现模块 → 2. 按依赖排序 → 3. AST 提取导入和代码
+4. 合并为一个文件 → 5. 去重/压缩/内联优化
+
+Merge src/ package modules into a single main.py file.
+"""
 
 import ast
 import re
@@ -7,14 +17,19 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# 必须优先加载的模块（依赖关系）
 # Modules that must be loaded first (dependencies)
 PRIORITY_MODULES = ["color.py", "_version.py", "config.py", "args.py"]
+# 必须最后加载的模块（程序入口）
 # Module that must be loaded last (entry point)
 ENTRY_MODULE = "cli.py"
 
 
 def discover_modules(src_dir: Path) -> list[str]:
-    """Auto-discover all .py modules in src/app/ directory."""
+    """自动发现 src/app/ 目录下所有 .py 模块。
+
+    Auto-discover all .py modules in src/app/ directory.
+    """
     modules = []
     for f in sorted(src_dir.glob("*.py")):
         if f.name in ("__init__.py", "__main__.py"):
@@ -24,7 +39,10 @@ def discover_modules(src_dir: Path) -> list[str]:
 
 
 def sort_modules(modules: list[str]) -> list[str]:
-    """Sort modules: priority first, entry last, rest in middle."""
+    """按优先级排序：依赖模块在前 → 普通模块 → 入口模块在最后。
+
+    Sort modules: priority first, entry last, rest in middle.
+    """
     priority = [m for m in PRIORITY_MODULES if m in modules]
     entry = [m for m in [ENTRY_MODULE] if m in modules]
     rest = [m for m in modules if m not in priority and m not in entry]
@@ -32,7 +50,10 @@ def sort_modules(modules: list[str]) -> list[str]:
 
 
 def extract_imports(filepath: Path) -> set[str]:
-    """Use ast to extract all import statements from a file."""
+    """用 AST 提取文件中的所有导入语句（跳过相对导入和 src 内部导入）。
+
+    Use ast to extract all import statements from a file.
+    """
     source = filepath.read_text(encoding="utf-8")
     try:
         tree = ast.parse(source)
@@ -58,10 +79,9 @@ def extract_imports(filepath: Path) -> set[str]:
 
 
 def extract_code(filepath: Path) -> str:
-    """Extract module code using AST to remove only module-level imports.
-    
-    Function-local imports (e.g. `import ctypes` inside a function body)
-    are preserved intact.
+    """提取模块代码，仅删除模块级导入，保留函数内 import。
+
+    Extract module code using AST to remove only module-level imports.
     """
     code = filepath.read_text(encoding="utf-8")
 
@@ -97,8 +117,9 @@ def extract_code(filepath: Path) -> str:
 
 
 def _is_wrapper(node: ast.FunctionDef | ast.AsyncFunctionDef) -> tuple[bool, str]:
-    """Check if a function is a trivial wrapper (just calls another function).
-    Returns (True, target_name) or (False, "").
+    """检测函数是否为简单包装器（仅调用另一个函数）。
+
+    Check if a function is a trivial wrapper (just calls another function).
     """
     if len(node.body) != 1:
         return False, ""
@@ -117,7 +138,10 @@ def _is_simple_pass(node: ast.FunctionDef) -> bool:
 
 
 def deduplicate_functions(code: str) -> str:
-    """Remove duplicate function/class definitions, keeping the first occurrence."""
+    """删除重复的函数/类定义，保留第一次出现。
+
+    Remove duplicate function/class definitions, keeping the first occurrence.
+    """
     tree = ast.parse(code)
     seen: set[str] = set()
     lines_to_remove: set[int] = set()
@@ -143,7 +167,10 @@ def deduplicate_functions(code: str) -> str:
 
 
 def remove_wrapper_functions(code: str) -> str:
-    """Remove trivial wrapper functions and replace their callers with the target."""
+    """删除简单包装函数，并将其调用替换为直接调用目标函数。
+
+    Remove trivial wrapper functions and replace their callers with the target.
+    """
     tree = ast.parse(code)
     wrappers: dict[str, str] = {}  # wrapper_name -> target_name
 
@@ -186,7 +213,10 @@ def remove_wrapper_functions(code: str) -> str:
 
 
 def strip_module_docstrings(code: str) -> str:
-    """Remove standalone string expressions (module/section docstrings) except the file header."""
+    """删除模块文档字符串（仅保留文件头部的）。
+
+    Remove standalone string expressions (module/section docstrings) except the file header.
+    """
     tree = ast.parse(code)
     lines = code.splitlines()
     lines_to_remove: set[int] = set()
@@ -209,10 +239,11 @@ def strip_module_docstrings(code: str) -> str:
 
 
 def minify_code(code: str) -> str:
-    """Minify code while preserving # type: ignore comments.
+    """压缩代码：保留 shebang、模块文档字符串和 # type: ignore 注释。
 
-    Uses line-by-line processing instead of ast.unparse() to keep
-    inline type-checking annotations intact.
+    使用逐行处理而非 ast.unparse()，避免丢失类型注解。
+
+    Minify code while preserving # type: ignore comments.
     """
     lines = code.splitlines()
     header_parts: list[str] = []
@@ -264,7 +295,10 @@ def minify_code(code: str) -> str:
 
 
 def post_process(code: str) -> str:
-    """Apply AST-based optimizations to merged code."""
+    """对合并后的代码应用 AST 优化：去重 → 内联包装器 → 清理空行 → 压缩。
+
+    Apply AST-based optimizations to merged code.
+    """
     # 1. Remove duplicate function/class definitions
     code = deduplicate_functions(code)
     # 2. Remove trivial wrapper functions and inline their calls
@@ -277,7 +311,10 @@ def post_process(code: str) -> str:
 
 
 def get_version() -> str:
-    """Generate version string from date (yy.mm.dd.hhmm)."""
+    """根据当前日期生成版本号（格式 yy.mm.dd.hhmm）。
+
+    Generate version string from date (yy.mm.dd.hhmm).
+    """
     now = datetime.now()
     return f"{now.year % 100:02d}.{now.month:02d}.{now.day:02d}.{now.hour:02d}{now.minute:02d}"
 

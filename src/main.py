@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""
+"""API 树 - 获取 OpenAPI 路由信息并以树状结构在终端中打印。
+
 Fetch OpenAPI route information and print as a tree structure in the terminal.
 
 Usage:
@@ -24,9 +25,11 @@ import os
 import sys
 from pathlib import Path
 
+# 设置 UTF-8 编码环境变量，确保中文输出不乱码
 # Set UTF-8 encoding environment variables
 os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
 
+# 将项目根目录加入搜索路径，确保 src 包可导入
 # Add project root to path for src package
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

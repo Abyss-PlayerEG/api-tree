@@ -1,4 +1,9 @@
-"""Console output for API tree."""
+"""终端控制台输出。
+
+以带颜色的树状图形式在终端打印 API 端点结构。
+
+Console output for API tree.
+"""
 
 from .color import Color
 from .tree import sort_children, TreeMatcher, _matches, _leaf_name, _leaf_name_no_search, TreeNode, EndpointDict
@@ -8,7 +13,15 @@ def print_tree(node: TreeNode, prefix: str = "", is_last: bool = True,
                search: str = "", name: str = "", path_accum: str = "",
                extra_eps: list[EndpointDict] | None = None, name_pad: int = 0,
                matcher: TreeMatcher | None = None) -> None:
-    """Print API tree to terminal with colors."""
+    """递归打印 API 树状图到终端。
+
+    特性：
+    - 单链合并：只有一个子目录且无端点时合并路径显示
+    - 搜索过滤：根据关键词过滤匹配的端点
+    - 对齐排版：根据叶子路径宽度对齐端点输出
+
+    Print API tree to terminal with colors.
+    """
     children = sort_children(node)
     eps = node["endpoints"]
     if extra_eps:

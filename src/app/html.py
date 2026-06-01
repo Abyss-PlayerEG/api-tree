@@ -1,4 +1,9 @@
-"""HTML output renderer for API tree."""
+"""HTML 输出渲染器。
+
+将 API 树结构渲染为带深色/浅色主题切换的独立 HTML 页面。
+
+HTML output renderer for API tree.
+"""
 
 from datetime import datetime
 
@@ -7,12 +12,20 @@ from .tree import sort_children, _leaf_name_no_search, TreeMatcher, TreeNode, En
 
 
 def _escape(text: str) -> str:
-    """Escape HTML special characters."""
+    """转义 HTML 特殊字符，防止 XSS。
+
+    Escape HTML special characters.
+    """
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
 def render_html_tree(node: TreeNode, title: str, total: int, search: str = "") -> str:
-    """Render API tree as an HTML file. Returns the output file path."""
+    """将 API 树渲染为独立 HTML 文件，返回输出路径。
+
+    HTML 特性：Catppuccin 主题配色、深色/浅色切换按钮、方法颜色标注。
+
+    Render API tree as an HTML file. Returns the output file path.
+    """
     METHOD_CLASS = {
         "GET": "method-get", "POST": "method-post", "PUT": "method-put",
         "DELETE": "method-delete", "PATCH": "method-patch",
@@ -188,7 +201,10 @@ def render_html_tree(node: TreeNode, title: str, total: int, search: str = "") -
 
 
 def _max_leaf_width_no_search(node: TreeNode) -> int:
-    """Calculate max leaf path width for all children (no search filter)."""
+    """计算所有子节点的最大叶子路径宽度（无搜索过滤）。
+
+    Calculate max leaf path width for all children (no search filter).
+    """
     pad = 0
     for cn, cn_node in sort_children(node):
         leaf = _leaf_name_no_search(cn_node, cn)

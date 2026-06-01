@@ -21,7 +21,7 @@ def get_version() -> str:
         return str(globals()["__version__"])
     # Package: import from _version module
     try:
-        from src._version import __version__  # type: ignore[import-not-found]
+        from src._version import __version__
         return str(__version__)
     except ImportError:
         return "DEV"

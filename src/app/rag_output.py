@@ -1,4 +1,10 @@
-"""RAG-optimized output for vector database knowledge base."""
+"""RAG 优化输出，供向量数据库知识库使用。
+
+将 API 端点按路径前缀分组，生成带上下文的文本块，
+适合导入向量数据库做语义检索。
+
+RAG-optimized output for vector database knowledge base.
+"""
 
 import json
 
@@ -8,18 +14,9 @@ from .tree import sort_children, TreeMatcher, TreeNode, EndpointDict
 def generate_rag_output(node: TreeNode, title: str, total: int, 
                        format_type: str, chunk_size: int = 10, 
                        search: str = "") -> str:
-    """Generate RAG-optimized output in specified format.
-    
-    Args:
-        node: Root node of API tree
-        title: API title
-        total: Total endpoint count
-        format_type: Output format (jsonl, json)
-        chunk_size: Number of endpoints per chunk
-        search: Optional search filter
-    
-    Returns:
-        Formatted string output
+    """按指定格式生成 RAG 优化输出。
+
+    Generate RAG-optimized output in specified format.
     """
     if format_type == "jsonl":
         return _generate_jsonl(node, title, total, chunk_size, search)
@@ -31,10 +28,11 @@ def generate_rag_output(node: TreeNode, title: str, total: int,
 
 def _generate_jsonl(node: TreeNode, title: str, total: int, 
                    chunk_size: int, search: str = "") -> str:
-    """Generate JSON Lines format for RAG knowledge base.
-    
-    Each line is a JSON object representing a logical chunk of API endpoints.
-    Chunks are grouped by path prefix for better context.
+    """生成 JSONL 格式：每行一个 JSON 块，适合逐行导入向量库。
+
+    按路径前缀分组端点，每组控制在 chunk_size 以内。
+
+    Generate JSON Lines format for RAG knowledge base.
     """
     matcher = TreeMatcher(node, search) if search else None
     
@@ -82,7 +80,10 @@ def _generate_jsonl(node: TreeNode, title: str, total: int,
 
 def _generate_json_chunks(node: TreeNode, title: str, total: int, 
                          chunk_size: int, search: str = "") -> str:
-    """Generate JSON format with array of chunks."""
+    """生成 JSON 格式：包含 chunks 数组的完整 JSON 文档。
+
+    Generate JSON format with array of chunks.
+    """
     matcher = TreeMatcher(node, search) if search else None
     
     # Collect all endpoints with their path context
@@ -189,7 +190,10 @@ def _collect_endpoints_with_context(node: TreeNode, endpoints: list[dict[str, ob
 
 
 def _group_by_prefix(endpoints: list[dict[str, object]]) -> dict[str, list[dict[str, object]]]:
-    """Group endpoints by their path prefix for better context."""
+    """按路径前缀分组端点，保持上下文连贯性。
+
+    Group endpoints by their path prefix for better context.
+    """
     groups: dict[str, list[dict[str, object]]] = {}
     
     for ep in endpoints:
@@ -202,7 +206,10 @@ def _group_by_prefix(endpoints: list[dict[str, object]]) -> dict[str, list[dict[
 
 
 def _create_chunk(title: str, prefix: str, endpoints: list[dict[str, object]]) -> dict[str, object]:
-    """Create a RAG chunk with metadata."""
+    """创建一个 RAG 块，包含元数据和可搜索文本。
+
+    Create a RAG chunk with metadata.
+    """
     # Create a descriptive title for the chunk
     if prefix == "/":
         chunk_title = f"{title} - Root endpoints"
@@ -238,7 +245,10 @@ def _create_chunk(title: str, prefix: str, endpoints: list[dict[str, object]]) -
 
 
 def _matches_search(node: TreeNode, search: str) -> bool:
-    """Check if node or its subtree matches search keyword."""
+    """检查节点或其子树是否匹配搜索关键词（无缓存）。
+
+    Check if node or its subtree matches search keyword.
+    """
     for ep in node["endpoints"]:
         if (search in ep["path_lower"]
                 or search in ep["summary_lower"]
