@@ -1,10 +1,5 @@
-"""Agent 优化输出格式，专供 LLM 消费。
-
-支持三种输出格式：
-- markdown：结构化 Markdown，适合 LLM 阅读
-- json：扁平化 JSON 端点列表
-- curl：CURL 请求模板，可直接执行
-
+"""
+Agent 优化输出格式,专供 LLM 消费
 Agent-optimized output formats for LLM consumption.
 """
 
@@ -13,10 +8,15 @@ import json
 from .tree import sort_children, TreeMatcher, TreeNode, EndpointDict
 
 
-def generate_agent_output(node: TreeNode, title: str, total: int, 
-                         format_type: str, search: str = "") -> str:
-    """按指定格式生成 Agent 优化输出。
-
+def generate_agent_output(
+        node: TreeNode,
+        title: str,
+        total: int,
+        format_type: str,
+        search: str = ""
+) -> str:
+    """
+    按指定格式生成 Agent 优化输出
     Generate agent-optimized output in specified format.
     """
     if format_type == "markdown":
@@ -29,9 +29,14 @@ def generate_agent_output(node: TreeNode, title: str, total: int,
         raise ValueError(f"Unsupported format: {format_type}")
 
 
-def _generate_markdown(node: TreeNode, title: str, total: int, search: str = "") -> str:
-    """生成 Markdown 格式，按路径层级组织端点。
-
+def _generate_markdown(
+        node: TreeNode,
+        title: str,
+        total: int,
+        search: str = ""
+) -> str:
+    """
+    生成 Markdown 格式,按路径层级组织端点
     Generate clean Markdown format optimized for LLM consumption.
     """
     lines = []
@@ -47,9 +52,18 @@ def _generate_markdown(node: TreeNode, title: str, total: int, search: str = "")
     return "\n".join(lines)
 
 
-def _walk_markdown(node: TreeNode, lines: list[str], prefix: str, path_accum: str,
-                   matcher: TreeMatcher | None = None, search: str = "") -> None:
-    """Recursively walk tree and generate Markdown lines."""
+def _walk_markdown(
+        node: TreeNode,
+        lines: list[str],
+        prefix: str,
+        path_accum: str,
+        matcher: TreeMatcher | None = None,
+        search: str = ""
+) -> None:
+    """
+    递归遍历树并生成 Markdown 行
+    Recursively walk tree and generate Markdown lines.
+    """
     children = sort_children(node)
     eps = node["endpoints"]
     
@@ -60,17 +74,17 @@ def _walk_markdown(node: TreeNode, lines: list[str], prefix: str, path_accum: st
                 return
             visible = matcher.visible_children(node)
         else:
-            visible = [(cn, cn_node) for cn, cn_node in children 
-                      if _matches_search(cn_node, search)]
+            visible = [(cn, cn_node) for cn, cn_node in children
+                       if _matches_search(cn_node, search)]
     else:
         visible = children
     
     # Filter endpoints if searching
     if search and eps:
         eps = [ep for ep in eps if (
-            search in ep["path_lower"]
-            or search in ep["summary_lower"]
-            or search in ep["method_lower"]
+                search in ep["path_lower"]
+                or search in ep["summary_lower"]
+                or search in ep["method_lower"]
         )]
     
     # Single child chain merge (only when no own endpoints)
@@ -103,9 +117,14 @@ def _walk_markdown(node: TreeNode, lines: list[str], prefix: str, path_accum: st
         _walk_markdown(child_node, lines, child_name, current_path, matcher, search)
 
 
-def _generate_json(node: TreeNode, title: str, total: int, search: str = "") -> str:
-    """生成扁平化 JSON 格式，包含所有端点列表。
-
+def _generate_json(
+        node: TreeNode,
+        title: str,
+        total: int,
+        search: str = ""
+) -> str:
+    """
+    生成扁平化 JSON 格式,包含所有端点列表
     Generate structured JSON format for programmatic consumption.
     """
     matcher = TreeMatcher(node, search) if search else None
@@ -124,9 +143,18 @@ def _generate_json(node: TreeNode, title: str, total: int, search: str = "") -> 
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
-def _collect_endpoints(node: TreeNode, endpoints: list[dict[str, object]], prefix: str, path_accum: str,
-                      matcher: TreeMatcher | None = None, search: str = "") -> None:
-    """Recursively collect all endpoints into flat list."""
+def _collect_endpoints(
+        node: TreeNode,
+        endpoints: list[dict[str, object]],
+        prefix: str,
+        path_accum: str,
+        matcher: TreeMatcher | None = None,
+        search: str = ""
+) -> None:
+    """
+    递归收集所有端点到扁平列表
+    Recursively collect all endpoints into flat list.
+    """
     children = sort_children(node)
     eps = node["endpoints"]
     
@@ -137,17 +165,17 @@ def _collect_endpoints(node: TreeNode, endpoints: list[dict[str, object]], prefi
                 return
             visible = matcher.visible_children(node)
         else:
-            visible = [(cn, cn_node) for cn, cn_node in children 
-                      if _matches_search(cn_node, search)]
+            visible = [(cn, cn_node) for cn, cn_node in children
+                       if _matches_search(cn_node, search)]
     else:
         visible = children
     
     # Filter endpoints if searching
     if search and eps:
         eps = [ep for ep in eps if (
-            search in ep["path_lower"]
-            or search in ep["summary_lower"]
-            or search in ep["method_lower"]
+                search in ep["path_lower"]
+                or search in ep["summary_lower"]
+                or search in ep["method_lower"]
         )]
     
     # Single child chain merge (only when no own endpoints)
@@ -174,9 +202,14 @@ def _collect_endpoints(node: TreeNode, endpoints: list[dict[str, object]], prefi
         _collect_endpoints(child_node, endpoints, child_name, current_path, matcher, search)
 
 
-def _generate_curl(node: TreeNode, title: str, total: int, search: str = "") -> str:
-    """生成 CURL 命令模板，包含认证头和示例请求体。
-
+def _generate_curl(
+        node: TreeNode,
+        title: str,
+        total: int,
+        search: str = ""
+) -> str:
+    """
+    生成 CURL 命令模板,包含认证头和示例请求体
     Generate CURL request templates for each endpoint.
     """
     matcher = TreeMatcher(node, search) if search else None
@@ -196,9 +229,18 @@ def _generate_curl(node: TreeNode, title: str, total: int, search: str = "") -> 
     return "\n".join(lines)
 
 
-def _collect_curl_templates(node: TreeNode, lines: list[str], prefix: str, path_accum: str,
-                           matcher: TreeMatcher | None = None, search: str = "") -> None:
-    """Recursively collect CURL templates for all endpoints."""
+def _collect_curl_templates(
+        node: TreeNode,
+        lines: list[str],
+        prefix: str,
+        path_accum: str,
+        matcher: TreeMatcher | None = None,
+        search: str = ""
+) -> None:
+    """
+    递归收集所有端点的 CURL 模板
+    Recursively collect CURL templates for all endpoints.
+    """
     children = sort_children(node)
     eps = node["endpoints"]
     
@@ -209,17 +251,17 @@ def _collect_curl_templates(node: TreeNode, lines: list[str], prefix: str, path_
                 return
             visible = matcher.visible_children(node)
         else:
-            visible = [(cn, cn_node) for cn, cn_node in children 
-                      if _matches_search(cn_node, search)]
+            visible = [(cn, cn_node) for cn, cn_node in children
+                       if _matches_search(cn_node, search)]
     else:
         visible = children
     
     # Filter endpoints if searching
     if search and eps:
         eps = [ep for ep in eps if (
-            search in ep["path_lower"]
-            or search in ep["summary_lower"]
-            or search in ep["method_lower"]
+                search in ep["path_lower"]
+                or search in ep["summary_lower"]
+                or search in ep["method_lower"]
         )]
     
     # Single child chain merge (only when no own endpoints)
@@ -254,10 +296,13 @@ def _collect_curl_templates(node: TreeNode, lines: list[str], prefix: str, path_
         _collect_curl_templates(child_node, lines, child_name, current_path, matcher, search)
 
 
-def _matches_search(node: TreeNode, search: str) -> bool:
-    """检查节点或其子树是否匹配搜索关键词（无缓存）。
-
-    Check if node or its subtree matches search keyword.
+def _matches_search(
+        node: TreeNode,
+        search: str
+) -> bool:
+    """
+    检查节点或其子树是否匹配搜索关键词(无缓存)
+    Check if node or its subtree matches search keyword (no cache).
     """
     for ep in node["endpoints"]:
         if (search in ep["path_lower"]

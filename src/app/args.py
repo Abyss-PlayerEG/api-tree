@@ -1,4 +1,7 @@
-"""Command-line argument parsing."""
+"""
+命令行参数解析
+Command-line argument parsing.
+"""
 
 import sys
 from dataclasses import dataclass, field
@@ -11,11 +14,15 @@ BANNER = """
 ██╔══██║██╔═══╝ ██║       ██║   ██╔══██╗██╔══╝  ██╔══╝
 ██║  ██║██║     ██║       ██║   ██║  ██║███████╗███████╗
 ╚═╝  ╚═╝╚═╝     ╚═╝       ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
-GitHub：https://github.com/Ender-g/api-tree
+GitHub:https://github.com/Ender-g/api-tree
 """
 
+
 def get_version() -> str:
-    """Get application version."""
+    """
+    获取应用版本号
+    Get application version.
+    """
     # Single-file distribution: __version__ defined at module level
     if "__version__" in globals():
         return str(globals()["__version__"])
@@ -29,7 +36,10 @@ def get_version() -> str:
 
 @dataclass
 class Args:
-    """Parsed command-line arguments."""
+    """
+    解析后的命令行参数
+    Parsed command-line arguments.
+    """
     source: str = field(default_factory=lambda: config.default_url)
     search: str = ""
     output_html: bool = False
@@ -44,7 +54,10 @@ HELP_TEXT = ""
 
 
 def get_help_text() -> str:
-    """Read help text from main module docstring."""
+    """
+    读取帮助文本
+    Read help text from main module docstring.
+    """
     # Single-file: module docstring is at the top of the merged file
     doc = sys.modules.get("__main__", None)
     if doc and doc.__doc__:
@@ -60,16 +73,9 @@ def get_help_text() -> str:
 
 
 def parse_args(argv: list[str] | None = None) -> Args:
-    """Parse command-line arguments.
-    
-    Args:
-        argv: Arguments to parse (defaults to sys.argv[1:])
-    
-    Returns:
-        Parsed Args instance
-    
-    Raises:
-        SystemExit: On invalid arguments
+    """
+    解析命令行参数为 Args 实例
+    Parse command-line arguments.
     """
     if argv is None:
         argv = sys.argv[1:]

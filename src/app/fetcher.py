@@ -1,4 +1,7 @@
-"""OpenAPI specification fetcher."""
+"""
+OpenAPI 规范获取器
+OpenAPI specification fetcher.
+"""
 
 import json
 import os
@@ -10,7 +13,10 @@ from urllib.parse import urlparse
 
 
 def fetch_openapi(source: str) -> dict[str, Any]:
-    """Fetch OpenAPI JSON from URL or local file."""
+    """
+    获取 OpenAPI JSON:支持本地文件和远程 URL
+    Fetch OpenAPI JSON from URL or local file.
+    """
     if os.path.isfile(source):
         with open(source, "r", encoding="utf-8") as f:
             return json.load(f)  # type: ignore[no-any-return]

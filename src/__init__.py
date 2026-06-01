@@ -1,5 +1,5 @@
-"""API 树 - 获取 OpenAPI 路由信息并以树状结构打印。
-
+"""
+API 树 - 获取 OpenAPI 路由信息并以树状结构打印
 API Tree - Fetch OpenAPI route information and print as a tree structure.
 """
 

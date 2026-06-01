@@ -1,8 +1,5 @@
-"""RAG 优化输出，供向量数据库知识库使用。
-
-将 API 端点按路径前缀分组，生成带上下文的文本块，
-适合导入向量数据库做语义检索。
-
+"""
+RAG 优化输出,供向量数据库知识库使用
 RAG-optimized output for vector database knowledge base.
 """
 
@@ -11,27 +8,34 @@ import json
 from .tree import sort_children, TreeMatcher, TreeNode, EndpointDict
 
 
-def generate_rag_output(node: TreeNode, title: str, total: int, 
-                       format_type: str, chunk_size: int = 10, 
-                       search: str = "") -> str:
-    """按指定格式生成 RAG 优化输出。
-
+def generate_rag_output(
+        node: TreeNode,
+        title: str,
+        total: int,
+        format_type: str,
+        chunk_size: int = 10,
+        search: str = ""
+) -> str:
+    """
+    按指定格式生成 RAG 优化输出
     Generate RAG-optimized output in specified format.
     """
     if format_type == "jsonl":
-        return _generate_jsonl(node, title, total, chunk_size, search)
+        return _generate_jsonl(node, title, chunk_size, search)
     elif format_type == "json":
         return _generate_json_chunks(node, title, total, chunk_size, search)
     else:
         raise ValueError(f"Unsupported RAG format: {format_type}")
 
 
-def _generate_jsonl(node: TreeNode, title: str, total: int, 
-                   chunk_size: int, search: str = "") -> str:
-    """生成 JSONL 格式：每行一个 JSON 块，适合逐行导入向量库。
-
-    按路径前缀分组端点，每组控制在 chunk_size 以内。
-
+def _generate_jsonl(
+        node: TreeNode,
+        title: str,
+        chunk_size: int,
+        search: str = ""
+) -> str:
+    """
+    生成 JSONL 格式:每行一个 JSON 块,适合逐行导入向量库
     Generate JSON Lines format for RAG knowledge base.
     """
     matcher = TreeMatcher(node, search) if search else None
@@ -78,10 +82,15 @@ def _generate_jsonl(node: TreeNode, title: str, total: int,
     return "\n".join(lines)
 
 
-def _generate_json_chunks(node: TreeNode, title: str, total: int, 
-                         chunk_size: int, search: str = "") -> str:
-    """生成 JSON 格式：包含 chunks 数组的完整 JSON 文档。
-
+def _generate_json_chunks(
+        node: TreeNode,
+        title: str,
+        total: int,
+        chunk_size: int,
+        search: str = ""
+) -> str:
+    """
+    生成 JSON 格式:包含 chunks 数组的完整 JSON 文档
     Generate JSON format with array of chunks.
     """
     matcher = TreeMatcher(node, search) if search else None
@@ -132,11 +141,18 @@ def _generate_json_chunks(node: TreeNode, title: str, total: int,
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
-def _collect_endpoints_with_context(node: TreeNode, endpoints: list[dict[str, object]], 
-                                   prefix: str, path_accum: str,
-                                   matcher: TreeMatcher | None = None, 
-                                   search: str = "") -> None:
-    """Recursively collect endpoints with their path context."""
+def _collect_endpoints_with_context(
+        node: TreeNode,
+        endpoints: list[dict[str, object]],
+        prefix: str,
+        path_accum: str,
+        matcher: TreeMatcher | None = None,
+        search: str = ""
+) -> None:
+    """
+    递归收集端点及其路径上下文
+    Recursively collect endpoints with their path context.
+    """
     children = sort_children(node)
     eps = node["endpoints"]
     
@@ -147,17 +163,17 @@ def _collect_endpoints_with_context(node: TreeNode, endpoints: list[dict[str, ob
                 return
             visible = matcher.visible_children(node)
         else:
-            visible = [(cn, cn_node) for cn, cn_node in children 
-                      if _matches_search(cn_node, search)]
+            visible = [(cn, cn_node) for cn, cn_node in children
+                       if _matches_search(cn_node, search)]
     else:
         visible = children
     
     # Filter endpoints if searching
     if search and eps:
         eps = [ep for ep in eps if (
-            search in ep["path_lower"]
-            or search in ep["summary_lower"]
-            or search in ep["method_lower"]
+                search in ep["path_lower"]
+                or search in ep["summary_lower"]
+                or search in ep["method_lower"]
         )]
     
     # Single child chain merge (only when no own endpoints)
@@ -190,8 +206,8 @@ def _collect_endpoints_with_context(node: TreeNode, endpoints: list[dict[str, ob
 
 
 def _group_by_prefix(endpoints: list[dict[str, object]]) -> dict[str, list[dict[str, object]]]:
-    """按路径前缀分组端点，保持上下文连贯性。
-
+    """
+    按路径前缀分组端点,保持上下文连贯性
     Group endpoints by their path prefix for better context.
     """
     groups: dict[str, list[dict[str, object]]] = {}
@@ -206,8 +222,8 @@ def _group_by_prefix(endpoints: list[dict[str, object]]) -> dict[str, list[dict[
 
 
 def _create_chunk(title: str, prefix: str, endpoints: list[dict[str, object]]) -> dict[str, object]:
-    """创建一个 RAG 块，包含元数据和可搜索文本。
-
+    """
+    创建一个 RAG 块,包含元数据和可搜索文本
     Create a RAG chunk with metadata.
     """
     # Create a descriptive title for the chunk
@@ -245,8 +261,8 @@ def _create_chunk(title: str, prefix: str, endpoints: list[dict[str, object]]) -
 
 
 def _matches_search(node: TreeNode, search: str) -> bool:
-    """检查节点或其子树是否匹配搜索关键词（无缓存）。
-
+    """
+    检查节点或其子树是否匹配搜索关键词(无缓存)
     Check if node or its subtree matches search keyword.
     """
     for ep in node["endpoints"]:
