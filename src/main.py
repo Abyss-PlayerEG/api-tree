@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""API 树 - 获取 OpenAPI 路由信息并以树状结构在终端中打印。
-
+"""
 Fetch OpenAPI route information and print as a tree structure in the terminal.
 
 Usage:
