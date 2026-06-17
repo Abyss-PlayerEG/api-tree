@@ -57,6 +57,11 @@ else
     echo "  [WARNING] Output file not found."
 fi
 
+# Copy install/uninstall scripts to dist
+cp src/installer/macOS/install.sh dist/api-tree/
+cp src/installer/macOS/uninstall.sh dist/api-tree/
+chmod +x dist/api-tree/install.sh dist/api-tree/uninstall.sh
+
 # Create zip archive
 ARCHIVE=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$ARCHIVE" in
