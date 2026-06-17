@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .color import Color
 from .fetcher import fetch_openapi
-from .tree import build_tree, count_endpoints, TreeMatcher
+from .tree import build_tree, count_endpoints, count_matching_endpoints, TreeMatcher
 from .console import print_tree
 from .html import render_html_tree
 from .agent_output import generate_agent_output
@@ -105,6 +105,7 @@ def run(args: Args) -> None:
     
     # Normal terminal output
     if args.search:
+        matching_total = count_matching_endpoints(tree, args.search)
         print(f'\nMatched - "{args.search}"')
     else:
         print(f"\n{Color.BOLD}{title} API Endpoint Tree{Color.RESET}  ({total} endpoints)")
@@ -112,7 +113,9 @@ def run(args: Args) -> None:
     matcher = TreeMatcher(tree, args.search) if args.search else None
     print_tree(tree, search=args.search, matcher=matcher)
     print()
-    if not args.search:
+    if args.search:
+        print(f"{Color.DIM}Total: {matching_total} endpoints{Color.RESET}")
+    else:
         print(f"{Color.DIM}Total: {total} endpoints{Color.RESET}")
     
     if args.output_html:
