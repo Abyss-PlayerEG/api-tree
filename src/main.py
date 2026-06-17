@@ -16,7 +16,7 @@ Usage:
     api-tree -v, --version            # Show version
     api-tree -h, --help               # Show help
 
-GitHub: https://github.com/Ender-g/api-tree
+GitHub: https://github.com/Abyss-PlayerEG/api-tree
 
 """
 

@@ -71,6 +71,10 @@ if exist dist\api-tree\api-tree.exe (
     echo [WARNING] Output file not found.
 )
 
+REM Copy install/uninstall scripts to dist for zip distribution
+copy src\installer\Windows\install.bat dist\api-tree\ >nul
+copy src\installer\Windows\uninstall.bat dist\api-tree\ >nul
+
 REM Create zip archive of dist\api-tree
 set "ZIP_NAME=api-tree-%VERSION%-win64.zip"
 if exist "dist\!ZIP_NAME!" del "dist\!ZIP_NAME!"
@@ -80,6 +84,10 @@ if !errorlevel! equ 0 (
 ) else (
     echo [WARNING] Zip creation failed.
 )
+
+REM Remove install scripts before Inno Setup (not needed in installer)
+del dist\api-tree\install.bat >nul 2>nul
+del dist\api-tree\uninstall.bat >nul 2>nul
 
 REM ── Generate installer with Inno Setup ──────────────
 echo [4/4] Generating installer...
