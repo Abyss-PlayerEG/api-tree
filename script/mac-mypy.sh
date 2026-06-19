@@ -23,7 +23,7 @@ uv sync
 # Run mypy
 echo "[2/2] Running mypy..."
 echo ""
-uv run mypy src/app src/__init__.py src/main.py src/tools
+uv run mypy src/api_tree
 
 echo ""
 echo "========================================"

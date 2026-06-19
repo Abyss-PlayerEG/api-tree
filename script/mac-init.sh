@@ -13,4 +13,4 @@ echo "Creating virtual environment and syncing dependencies..."
 uv sync
 
 echo ""
-echo "Done. Run with: uv run python src/main.py"
+echo "Done. Run with: uv run python src/api_tree/main.py"

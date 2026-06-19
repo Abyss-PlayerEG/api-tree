@@ -38,14 +38,14 @@ fi
 
 # Generate single-file version
 echo "[1.5/4] Generating single-file api-tree-${VERSION}.py..."
-uv run python src/tools/merge_src.py "$VERSION"
+uv run python src/api_tree/tools/merge_src.py "$VERSION"
 
 # Run PyInstaller via uv (onedir for fast startup)
 echo "[2/4] Building executable..."
-uv run pyinstaller --onedir --name api-tree --clean --noconfirm --strip --icon=icon.ico src/main.py
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --strip --icon=icon.ico src/api_tree/main.py
 
 # Cleanup build-time version file
-rm -f src/_version.py
+rm -f src/api_tree/_version.py
 
 # Show result
 echo "[3/4] Build complete."
@@ -58,8 +58,8 @@ else
 fi
 
 # Copy install/uninstall scripts to dist
-cp src/installer/macOS/install.sh dist/api-tree/
-cp src/installer/macOS/uninstall.sh dist/api-tree/
+cp src/api_tree/installer/macOS/install.sh dist/api-tree/
+cp src/api_tree/installer/macOS/uninstall.sh dist/api-tree/
 chmod +x dist/api-tree/install.sh dist/api-tree/uninstall.sh
 
 # Create zip archive

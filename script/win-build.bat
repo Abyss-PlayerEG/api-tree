@@ -46,20 +46,20 @@ if defined PREFIX set "VERSION=%PREFIX%-%VERSION%"
 
 REM Generate single-file version from src/app/
 echo [1.5/4] Generating single-file api-tree-%VERSION%.py...
-uv run python src/tools/merge_src.py %VERSION%
+uv run python src/api_tree/tools/merge_src.py %VERSION%
 
 REM Run PyInstaller via uv (onedir for fast startup)
 echo [2/4] Building executable...
-uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico src/main.py
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico src/api_tree/main.py
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
-    del src\_version.py >nul 2>nul
+    del src\api_tree\_version.py >nul 2>nul
     exit /b 1
 )
 
 REM Cleanup build-time version file
-del src\_version.py >nul 2>nul
+del src\api_tree\_version.py >nul 2>nul
 
 REM Show executable result
 echo [3/4] Executable build complete.
@@ -72,8 +72,8 @@ if exist dist\api-tree\api-tree.exe (
 )
 
 REM Copy install/uninstall scripts to dist for zip distribution
-copy src\installer\Windows\install.bat dist\api-tree\ >nul
-copy src\installer\Windows\uninstall.bat dist\api-tree\ >nul
+copy src\api_tree\installer\Windows\install.bat dist\api-tree\ >nul
+copy src\api_tree\installer\Windows\uninstall.bat dist\api-tree\ >nul
 
 REM Create zip archive of dist\api-tree
 set "ZIP_NAME=api-tree-%VERSION%-win64.zip"
