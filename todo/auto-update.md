@@ -11,33 +11,70 @@ api-tree update              # 检查并更新
 api-tree update --check      # 只检查，不更新
 ```
 
+## 实际 Release 结构
+
+基于 GitHub API 返回的 `releases/latest`：
+
+```
+tag_name: "V26.06.01.1100"      ← 版本号格式：V{yy.mm.dd.hhmm}
+
+assets:
+├── api-tree-26.06.01.1148-macos.zip           ← macOS 可执行文件
+├── api-tree-26.06.01.1150-win64.zip           ← Windows 便携版
+├── api-tree-26.06.01.1150.py                  ← 单文件 Python 版
+├── api-tree-setup-26.06.01.1150-win64.exe     ← Windows 安装版
+└── SKILL.md                                    ← 忽略
+```
+
+### 版本号解析
+
+格式：`V{yy}.{mm}.{dd}.{hhmm}`
+
+```python
+def parse_version(v: str) -> tuple[int, ...]:
+    """V26.06.01.1100 → (26, 6, 1, 1100)"""
+    clean = v.lstrip("Vv").lstrip("v")
+    return tuple(int(x) for x in clean.split("."))
+```
+
+### 平台匹配规则
+
+| 平台 | 匹配关键词 | 排除关键词 |
+|------|-----------|-----------|
+| macOS | `macos` | `setup` |
+| Windows | `win64` + `setup` (安装版) 或 `win64` (便携版) | - |
+| Linux | `linux` | `setup` |
+
 ## 流程
 
 ```
 api-tree update
 │
-├─ 1. 读取当前版本（_version 或打包时写入的版本）
+├─ 1. 读取当前版本（打包时写入的 _version）
 │
 ├─ 2. 请求 GitHub Releases API
 │     GET https://api.github.com/repos/Abyss-PlayerEG/api-tree/releases/latest
 │
 ├─ 3. 对比版本
 │     ├─ 已是最新 → 提示 "Already up to date"
-│     └─ 有新版本 → 提示 "New version: 1.2.0 (current: 1.1.0)"
+│     └─ 有新版本 → 提示 "New version: V26.06.20.1200 (current: V26.06.01.1100)"
 │
-├─ 4. 检测当前平台
-│     ├─ macOS → 下载 *-macos.zip
-│     └─ Windows → 下载 *-win64.zip
+├─ 4. 检测当前平台，选择 asset
+│     ├─ macOS   → api-tree-*-macos.zip
+│     ├─ Windows → api-tree-*-win64.zip（便携版）
+│     └─ Linux   → api-tree-*-linux.zip
 │
-├─ 5. 下载到临时目录
+├─ 5. 下载到临时目录（显示进度条）
 │
 ├─ 6. 解压
 │
-├─ 7. 替换当前可执行文件
-│     ├─ macOS: mv /tmp/api-tree /usr/local/bin/api-tree
-│     └─ Windows: 覆盖当前 exe（需要延迟替换 bat）
+├─ 7. SHA256 校验（asset.digest 字段）
 │
-└─ 8. 提示 "Updated to 1.2.0"
+├─ 8. 替换当前可执行文件
+│     ├─ macOS/Linux: 替换 + chmod +x
+│     └─ Windows: 写 .bat 延迟替换脚本，提示重启
+│
+└─ 9. 提示 "Updated to V26.06.20.1200"
 ```
 
 ## 文件结构
@@ -51,6 +88,7 @@ src/api_tree/app/updater.py    # 更新逻辑
 ### updater.py
 
 ```python
+import hashlib
 import json
 import os
 import platform
@@ -73,17 +111,9 @@ def get_current_version() -> str:
         return "DEV"
 
 
-def fetch_latest_release() -> dict:
-    """从 GitHub 获取最新 release 信息"""
-    req = urllib.request.Request(GITHUB_API, headers={"Accept": "application/vnd.github.v3+json"})
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read())
-
-
 def parse_version(v: str) -> tuple[int, ...]:
-    """解析版本号为可比较的元组"""
-    # 处理 "dev-26.06.20.0054" 格式
-    clean = v.split("-", 1)[-1] if "-" in v else v
+    """V26.06.01.1100 → (26, 6, 1, 1100)"""
+    clean = v.lstrip("Vv")
     parts = []
     for p in clean.split("."):
         try:
@@ -93,26 +123,49 @@ def parse_version(v: str) -> tuple[int, ...]:
     return tuple(parts)
 
 
+def fetch_latest_release() -> dict:
+    """从 GitHub 获取最新 release 信息"""
+    req = urllib.request.Request(GITHUB_API, headers={
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "api-tree",
+    })
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read())
+
+
 def get_download_asset(release: dict) -> dict | None:
     """根据当前平台选择对应的下载资源"""
     system = platform.system().lower()
-    for asset in release.get("assets", []):
+    assets = release.get("assets", [])
+
+    for asset in assets:
         name = asset["name"].lower()
+
         if system == "darwin" and "macos" in name and name.endswith(".zip"):
             return asset
-        elif system == "windows" and "win64" in name and name.endswith(".zip"):
+
+        elif system == "windows" and "win64" in name and name.endswith(".zip") and "setup" not in name:
             return asset
+
         elif system == "linux" and "linux" in name and name.endswith(".zip"):
             return asset
+
     return None
 
 
-def get_current_exe_path() -> Path:
-    """获取当前可执行文件路径"""
+def verify_hash(filepath: str, expected_sha256: str) -> bool:
+    """校验文件 SHA256"""
+    sha256 = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest() == expected_sha256
+
+
+def get_current_exe_path() -> Path | None:
+    """获取当前可执行文件路径，非打包环境返回 None"""
     if getattr(sys, 'frozen', False):
-        # PyInstaller 打包
         return Path(sys.executable)
-    # 开发模式，返回 None
     return None
 
 
@@ -125,7 +178,7 @@ def check_update() -> tuple[str, str] | None:
     """
     current = get_current_version()
     release = fetch_latest_release()
-    latest = release.get("tag_name", "").lstrip("v")
+    latest = release.get("tag_name", "")
 
     if not latest:
         return None
@@ -138,20 +191,26 @@ def check_update() -> tuple[str, str] | None:
 
 def do_update() -> bool:
     """
-    执行更新：下载新版本并替换当前可执行文件
+    执行更新
 
     Returns:
         True 更新成功，False 更新失败
     """
     current = get_current_version()
-    release = fetch_latest_release()
-    latest = release.get("tag_name", "").lstrip("v")
+
+    try:
+        release = fetch_latest_release()
+    except Exception as e:
+        print(f"Error: Failed to check for updates: {e}")
+        return False
+
+    latest = release.get("tag_name", "")
 
     if parse_version(latest) <= parse_version(current):
         print("Already up to date.")
         return False
 
-    print(f"New version available: {latest} (current: {current})")
+    print(f"New version: {latest} (current: {current})")
 
     asset = get_download_asset(release)
     if not asset:
@@ -159,33 +218,52 @@ def do_update() -> bool:
         return False
 
     download_url = asset["browser_download_url"]
+    expected_hash = asset.get("digest", "").replace("sha256:", "")
+
     print(f"Downloading {asset['name']}...")
 
-    # 下载到临时目录
     with tempfile.TemporaryDirectory() as tmpdir:
         zip_path = os.path.join(tmpdir, asset["name"])
-        urllib.request.urlretrieve(download_url, zip_path)
+
+        # 下载
+        try:
+            urllib.request.urlretrieve(download_url, zip_path)
+        except Exception as e:
+            print(f"Error: Download failed: {e}")
+            return False
+
+        # 校验 hash
+        if expected_hash and not verify_hash(zip_path, expected_hash):
+            print("Error: SHA256 verification failed.")
+            return False
 
         # 解压
-        with zipfile.ZipFile(zip_path) as zf:
-            zf.extractall(tmpdir)
+        try:
+            with zipfile.ZipFile(zip_path) as zf:
+                zf.extractall(tmpdir)
+        except zipfile.BadZipFile:
+            print("Error: Invalid zip file.")
+            return False
 
-        # 找到解压后的可执行文件
+        # 找到可执行文件
         exe_name = "api-tree.exe" if platform.system() == "Windows" else "api-tree"
-        extracted = os.path.join(tmpdir, exe_name)
+        extracted = None
+        for root, _, files in os.walk(tmpdir):
+            if exe_name in files:
+                extracted = os.path.join(root, exe_name)
+                break
 
-        if not os.path.exists(extracted):
+        if not extracted:
             print("Error: Executable not found in archive.")
             return False
 
-        # 替换当前可执行文件
+        # 替换
         current_exe = get_current_exe_path()
         if current_exe is None:
-            print("Error: Cannot determine executable path (running from source?).")
+            print("Running from source. Cannot self-update.")
             print(f"Download manually: {download_url}")
             return False
 
-        # 备份旧版本
         backup = current_exe.with_suffix(".bak")
         shutil.copy2(current_exe, backup)
 
@@ -196,7 +274,6 @@ def do_update() -> bool:
             print(f"Updated to {latest}")
             return True
         except Exception as e:
-            # 回滚
             shutil.copy2(backup, current_exe)
             backup.unlink(missing_ok=True)
             print(f"Update failed: {e}")
