@@ -315,12 +315,12 @@ def main():
     # Get version from argument or generate from date
     version = sys.argv[1] if len(sys.argv) > 1 else get_version()
     
-    project_root = Path(__file__).parent.parent.parent
-    src_dir = project_root / "src" / "app"
+    project_root = Path(__file__).parent.parent.parent.parent
+    src_dir = project_root / "src" / "api_tree" / "app"
     output_file = project_root / "dist" / f"api-tree-{version}.py"
     
     # Read docstring from main.py for the header
-    main_py = project_root / "src" / "main.py"
+    main_py = project_root / "src" / "api_tree" / "main.py"
     main_doc = "Fetch OpenAPI route information and print as a tree structure in the terminal."
     if main_py.exists():
         try:
@@ -387,7 +387,7 @@ if __name__ == "__main__":
     print(f"Generated: {output_file}")
     
     # Write version to src/_version.py for PyInstaller
-    version_file = project_root / "src" / "_version.py"
+    version_file = project_root / "src" / "api_tree" / "_version.py"
     version_file.write_text(f'__version__ = "{version}"\n', encoding="utf-8")
     print(f"Version file: {version_file}")
 
