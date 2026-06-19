@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import re
@@ -60,9 +61,7 @@ def _get_ssl_context() -> ssl.SSLContext:
         return ssl.create_default_context(cafile=certifi.where())
     except ImportError:
         pass
-    import sys as _sys
-    print("Warning: SSL verification disabled, connection is not secure.", file=_sys.stderr)
-    return ssl._create_unverified_context()
+    raise ssl.SSLError("Cannot establish secure connection. No trusted certificates found.")
 
 
 def _get_version_and_tag() -> tuple[str, str]:
@@ -163,65 +162,119 @@ def _get_install_dir() -> Path:
     return exe.parent
 
 
-def _download(url: str, dest: Path) -> bool:
+def _download(url: str, dest: Path, expected_sha256: str | None = None) -> bool:
     req = urllib.request.Request(url, headers={"User-Agent": "api-tree"})
     try:
         ctx = _get_ssl_context()
         with urllib.request.urlopen(req, timeout=60, context=ctx) as resp:
-            dest.write_bytes(resp.read())
+            data = resp.read()
+        if expected_sha256:
+            actual = hashlib.sha256(data).hexdigest()
+            if actual != expected_sha256:
+                print(f"SHA256 mismatch: expected {expected_sha256}, got {actual}")
+                return False
+        dest.write_bytes(data)
         return True
     except Exception as e:
         print(f"Download failed: {e}")
         return False
 
 
-def _replace_py(asset_url: str) -> bool:
+def _extract_sha256(asset: dict) -> str | None:
+    digest = str(asset.get("digest", ""))
+    if digest.startswith("sha256:"):
+        return digest[7:]
+    return None
+
+
+def _backup_dir(dir_path: Path) -> Path | None:
+    backup = dir_path.parent / f"{dir_path.name}.bak"
+    if backup.exists():
+        shutil.rmtree(backup)
+    shutil.copytree(dir_path, backup)
+    return backup
+
+
+def _rollback_dir(dir_path: Path, backup: Path) -> None:
+    if dir_path.exists():
+        shutil.rmtree(dir_path)
+    shutil.copytree(backup, dir_path)
+
+
+def _cleanup_backups(install_dir: Path, script_path: Path | None = None) -> None:
+    for bak in install_dir.parent.glob(f"{install_dir.name}.bak"):
+        if bak.is_dir():
+            shutil.rmtree(bak)
+    if script_path:
+        bak_file = script_path.parent / f"{script_path.name}.bak"
+        bak_file.unlink(missing_ok=True)
+
+
+def _replace_py(asset_url: str, sha256: str | None) -> bool:
     current = Path(sys.argv[0]).resolve()
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_file = Path(tmp) / "update.py"
-        if not _download(asset_url, tmp_file):
-            return False
-        shutil.copy2(tmp_file, current)
-    return True
+    backup = current.parent / f"{current.name}.bak"
+    shutil.copy2(current, backup)
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_file = Path(tmp) / "update.py"
+            if not _download(asset_url, tmp_file, sha256):
+                return False
+            shutil.copy2(tmp_file, current)
+        backup.unlink(missing_ok=True)
+        return True
+    except Exception as e:
+        print(f"Update failed, rolling back: {e}")
+        shutil.copy2(backup, current)
+        backup.unlink(missing_ok=True)
+        return False
 
 
-def _replace_zip(asset_url: str) -> bool:
+def _replace_zip(asset_url: str, sha256: str | None) -> bool:
     install_dir = _get_install_dir()
-    with tempfile.TemporaryDirectory() as tmp:
-        zip_path = Path(tmp) / "update.zip"
-        if not _download(asset_url, zip_path):
-            return False
-        extract_dir = Path(tmp) / "extract"
-        try:
-            with zipfile.ZipFile(zip_path) as zf:
-                zf.extractall(extract_dir)
-        except zipfile.BadZipFile:
-            print("Update package is corrupted.")
-            return False
-        top_items = list(extract_dir.iterdir())
-        source = top_items[0] if len(top_items) == 1 and top_items[0].is_dir() else extract_dir
-        for item in install_dir.iterdir():
-            if item.name == "config.json":
-                continue
-            if item.is_dir():
-                shutil.rmtree(item)
-            else:
-                item.unlink()
-        for item in source.iterdir():
-            dest = install_dir / item.name
-            if item.is_dir():
-                shutil.copytree(item, dest)
-            else:
-                shutil.copy2(item, dest)
-            if sys.platform != "win32" and item.name in ("api-tree", "install.sh", "uninstall.sh"):
-                dest.chmod(0o755)
-    return True
+    backup = _backup_dir(install_dir)
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            zip_path = Path(tmp) / "update.zip"
+            if not _download(asset_url, zip_path, sha256):
+                raise RuntimeError("Download failed")
+            extract_dir = Path(tmp) / "extract"
+            try:
+                with zipfile.ZipFile(zip_path) as zf:
+                    zf.extractall(extract_dir)
+            except zipfile.BadZipFile:
+                raise RuntimeError("Update package is corrupted")
+            top_items = list(extract_dir.iterdir())
+            source = top_items[0] if len(top_items) == 1 and top_items[0].is_dir() else extract_dir
+            for item in install_dir.iterdir():
+                if item.name == "config.json":
+                    continue
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
+            for item in source.iterdir():
+                dest = install_dir / item.name
+                if item.is_dir():
+                    shutil.copytree(item, dest)
+                else:
+                    shutil.copy2(item, dest)
+                if sys.platform != "win32" and item.name in ("api-tree", "install.sh", "uninstall.sh"):
+                    dest.chmod(0o755)
+        if backup:
+            shutil.rmtree(backup)
+        return True
+    except Exception as e:
+        print(f"Update failed, rolling back: {e}")
+        if backup and backup.exists():
+            _rollback_dir(install_dir, backup)
+            shutil.rmtree(backup)
+        return False
 
 
-def _replace_win64_setup(asset_url: str) -> bool:
+def _replace_win64_setup(asset_url: str, sha256: str | None) -> bool:
     with tempfile.TemporaryDirectory() as tmp:
         exe_path = Path(tmp) / "update-setup.exe"
-        if not _download(asset_url, exe_path):
+        if not _download(asset_url, exe_path, sha256):
             return False
         print(f"Launching installer: {exe_path}")
         if sys.platform == "win32":
@@ -256,6 +309,9 @@ def perform_update() -> None:
         return
     print(f"New version available: {current_version} -> {latest}")
     install_type = detect_install_type()
+
+    install_dir = _get_install_dir() if install_type != "py" else Path(sys.argv[0]).resolve().parent
+    _cleanup_backups(install_dir, Path(sys.argv[0]).resolve() if install_type == "py" else None)
     raw_assets = release.get("assets", [])
     assets = raw_assets if isinstance(raw_assets, list) else []
     asset = find_asset(assets, install_type)
@@ -264,14 +320,15 @@ def perform_update() -> None:
         return
     url = str(asset.get("browser_download_url", ""))
     name = str(asset.get("name", ""))
+    sha256 = _extract_sha256(asset)
     print(f"Downloading {name}...")
     ok = False
     if install_type == "py":
-        ok = _replace_py(url)
+        ok = _replace_py(url, sha256)
     elif install_type in ("macos", "win64"):
-        ok = _replace_zip(url)
+        ok = _replace_zip(url, sha256)
     elif install_type == "win64-setup":
-        ok = _replace_win64_setup(url)
+        ok = _replace_win64_setup(url, sha256)
     if ok:
         print("Update complete.")
     else:
