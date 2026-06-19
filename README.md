@@ -27,21 +27,25 @@ A lightweight CLI tool that renders OpenAPI (Swagger) specifications as beautifu
 
 ## Installation
 
-### pipx (recommended)
-
-```bash
-pipx install api-tree
-```
-
-### uv
-
-```bash
-uv tool install api-tree
-```
-
 ### Standalone executables
 
 Download from [GitHub Releases](https://github.com/Abyss-PlayerEG/api-tree/releases) — no Python required.
+
+### Build from source
+
+```bash
+git clone https://github.com/Abyss-PlayerEG/api-tree.git
+cd api-tree
+uv sync
+uv run api-tree
+```
+
+### Future
+
+- [ ] `pip install api-tree`
+- [ ] `pipx install api-tree`
+- [ ] `brew install api-tree`
+- [ ] `winget install api-tree`
 
 ## Quick Start
 
@@ -113,21 +117,6 @@ Config file:
     "output_dir": "~/Downloads",
     "default_url": "http://localhost:8080"
 }
-```
-
-## Build from Source
-
-```bash
-git clone https://github.com/Abyss-PlayerEG/api-tree.git
-cd api-tree
-uv sync
-
-# Run directly
-uv run api-tree
-
-# Build executable
-bash script/mac-build.sh        # macOS / Linux
-script\win-build.bat            # Windows
 ```
 
 ## Screenshots

@@ -27,21 +27,25 @@
 
 ## 安裝
 
-### pipx（推薦）
-
-```bash
-pipx install api-tree
-```
-
-### uv
-
-```bash
-uv tool install api-tree
-```
-
 ### 獨立可執行檔案
 
 從 [GitHub Releases](https://github.com/Abyss-PlayerEG/api-tree/releases) 下載，無需 Python 環境。
+
+### 從原始碼建構
+
+```bash
+git clone https://github.com/Abyss-PlayerEG/api-tree.git
+cd api-tree
+uv sync
+uv run api-tree
+```
+
+### 未來計劃
+
+- [ ] `pip install api-tree`
+- [ ] `pipx install api-tree`
+- [ ] `brew install api-tree`
+- [ ] `winget install api-tree`
 
 ## 快速開始
 
@@ -113,21 +117,6 @@ api-tree --show-config                # 檢視目前設定
     "output_dir": "~/Downloads",
     "default_url": "http://localhost:8080"
 }
-```
-
-## 從原始碼建構
-
-```bash
-git clone https://github.com/Abyss-PlayerEG/api-tree.git
-cd api-tree
-uv sync
-
-# 直接執行
-uv run api-tree
-
-# 建構可執行檔案
-bash script/mac-build.sh        # macOS / Linux
-script\win-build.bat            # Windows
 ```
 
 ## 效果展示
