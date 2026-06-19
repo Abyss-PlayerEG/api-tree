@@ -15,7 +15,7 @@ __pycache__/
 .DS_Store
 
 # Build artifact
-src/_version.py
+src/api_tree/_version.py
 
 # Windows
 Thumbs.db
