@@ -32,7 +32,7 @@ os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
 # Add project root to search path to ensure src package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.app import main
+from api_tree.app import main
 
 if __name__ == "__main__":
     main()

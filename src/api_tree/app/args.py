@@ -28,7 +28,7 @@ def get_version() -> str:
         return str(globals()["__version__"])
     # Package: import from _version module
     try:
-        from src._version import __version__
+        from api_tree._version import __version__
         return str(__version__)
     except ImportError:
         return "DEV"
@@ -64,7 +64,7 @@ def get_help_text() -> str:
         return doc.__doc__.strip()
     # Package: read from main.py
     try:
-        from src.main import __doc__
+        from api_tree.main import __doc__
         if __doc__:
             return __doc__.strip()
     except ImportError:
