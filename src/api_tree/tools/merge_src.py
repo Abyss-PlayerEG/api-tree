@@ -312,8 +312,34 @@ def get_version() -> str:
 
 
 def main():
-    # Get version from argument or generate from date
-    version = sys.argv[1] if len(sys.argv) > 1 else get_version()
+    # Parse arguments: version [--tag TAG] [--version-only]
+    args = sys.argv[1:]
+    version = ""
+    tag = "dev"
+    version_only = False
+    
+    i = 0
+    while i < len(args):
+        if args[i] == "--tag" and i + 1 < len(args):
+            tag = args[i + 1]
+            i += 2
+        elif args[i] == "--version-only":
+            version_only = True
+            i += 1
+        elif not version:
+            version = args[i]
+            i += 1
+        else:
+            i += 1
+    
+    if not version:
+        version = get_version()
+    
+    if version_only:
+        version_file = Path(__file__).parent.parent.parent.parent / "src" / "api_tree" / "_version.py"
+        version_file.write_text(f'__version__ = "{version}"\n__tag__ = "{tag}"\n', encoding="utf-8")
+        print(f"Version file: {version_file} (tag={tag})")
+        return
     
     project_root = Path(__file__).parent.parent.parent.parent
     src_dir = project_root / "src" / "api_tree" / "app"
@@ -361,11 +387,12 @@ def main():
     imports_section = "\n".join(sorted(all_imports)) + "\n"
     body = "\n\n".join(module_codes)
     
-    # Add version and main entry point
+    # Add version, tag and main entry point
     main_entry = f'''
 
 
 __version__ = "{version}"
+__tag__ = "{tag}"
 
 if __name__ == "__main__":
     main()
@@ -373,8 +400,9 @@ if __name__ == "__main__":
     
     content = header + imports_section + "\n" + body + main_entry
     
-    # Replace DEV version with actual version
+    # Replace DEV version/tag with actual values
     content = content.replace('__version__ = "DEV"', f'__version__ = "{version}"')
+    content = content.replace('__tag__ = "dev"', f'__tag__ = "{tag}"')
     
     # Apply AST-based post-processing
     content = post_process(content)
@@ -386,10 +414,10 @@ if __name__ == "__main__":
     output_file.write_text(content, encoding="utf-8")
     print(f"Generated: {output_file}")
     
-    # Write version to src/_version.py for PyInstaller
+    # Write version and tag to src/_version.py for PyInstaller
     version_file = project_root / "src" / "api_tree" / "_version.py"
-    version_file.write_text(f'__version__ = "{version}"\n', encoding="utf-8")
-    print(f"Version file: {version_file}")
+    version_file.write_text(f'__version__ = "{version}"\n__tag__ = "{tag}"\n', encoding="utf-8")
+    print(f"Version file: {version_file} (tag={tag})")
 
 
 if __name__ == "__main__":

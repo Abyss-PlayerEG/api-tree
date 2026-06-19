@@ -46,7 +46,11 @@ if defined PREFIX set "VERSION=%PREFIX%-%VERSION%"
 
 REM Generate single-file version from src/app/
 echo [1.5/4] Generating single-file api-tree-%VERSION%.py...
-uv run python src/api_tree/tools/merge_src.py %VERSION%
+uv run python src/api_tree/tools/merge_src.py %VERSION% --tag python-script
+
+REM Regenerate _version.py with win64 tag for PyInstaller
+echo [1.6/4] Regenerating _version.py with tag=win64-zip...
+uv run python src/api_tree/tools/merge_src.py %VERSION% --tag win64-zip --version-only
 
 REM Run PyInstaller via uv (onedir for fast startup)
 echo [2/4] Building executable...

@@ -38,7 +38,16 @@ fi
 
 # Generate single-file version
 echo "[1.5/4] Generating single-file api-tree-${VERSION}.py..."
-uv run python src/api_tree/tools/merge_src.py "$VERSION"
+uv run python src/api_tree/tools/merge_src.py "$VERSION" --tag python-script
+
+# Regenerate _version.py with platform tag for PyInstaller
+ARCHIVE=$(uname -s | tr '[:upper:]' '[:lower:]')
+case "$ARCHIVE" in
+    darwin) PLATFORM_TAG="macos-zip" ;;
+    *)      PLATFORM_TAG="${ARCHIVE}-zip" ;;
+esac
+echo "[1.6/4] Regenerating _version.py with tag=${PLATFORM_TAG}..."
+uv run python src/api_tree/tools/merge_src.py "$VERSION" --tag "$PLATFORM_TAG" --version-only
 
 # Run PyInstaller via uv (onedir for fast startup)
 echo "[2/4] Building executable..."
@@ -63,13 +72,7 @@ cp src/api_tree/installer/macOS/uninstall.sh dist/api-tree/
 chmod +x dist/api-tree/install.sh dist/api-tree/uninstall.sh
 
 # Create zip archive
-ARCHIVE=$(uname -s | tr '[:upper:]' '[:lower:]')
-case "$ARCHIVE" in
-    darwin) PLATFORM="macos" ;;
-    linux)  PLATFORM="linux" ;;
-    *)      PLATFORM="$ARCHIVE" ;;
-esac
-ZIP_NAME="api-tree-${VERSION}-${PLATFORM}.zip"
+ZIP_NAME="api-tree-${VERSION}-${PLATFORM_TAG}.zip"
 if [[ -f "dist/${ZIP_NAME}" ]]; then
     rm -f "dist/${ZIP_NAME}"
 fi

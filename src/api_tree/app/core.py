@@ -70,6 +70,35 @@ def run(args: Args) -> None:
     执行主流程:获取 OpenAPI → 构建树 → 按模式输出
     Run the API tree application.
     """
+    # Handle update commands
+    if args.update:
+        try:
+            from .updater import is_release_version, check_update, perform_update, fetch_latest_release
+        except ImportError:
+            import sys as _sys
+            _g = _sys.modules.get("__main__", _sys.modules[__name__]).__dict__
+            is_release_version = _g["is_release_version"]
+            check_update = _g["check_update"]
+            perform_update = _g["perform_update"]
+            fetch_latest_release = _g["fetch_latest_release"]
+        if not is_release_version():
+            print("Current version is not within the supported update range.")
+            return
+        if args.update_check:
+            if not fetch_latest_release():
+                print("Failed to check for updates. Please check your network connection.")
+                return
+            result = check_update()
+            if result:
+                current, latest = result
+                print(f"New version available: {current} -> {latest}")
+                print("Run 'api-tree update' to install.")
+            else:
+                print("Already up to date.")
+        else:
+            perform_update()
+        return
+
     # Handle config commands
     if args.init_config:
         _init_config()

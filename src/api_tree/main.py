@@ -13,6 +13,8 @@ Usage:
     api-tree --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
     api-tree --init-config            # Generate default config file
     api-tree --show-config            # Show current config
+    api-tree update                # Update to latest version
+    api-tree update --check        # Check for updates (no install)
     api-tree -v, --version            # Show version
     api-tree -h, --help               # Show help
 
