@@ -2,6 +2,7 @@ import json
 import os
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -11,6 +12,57 @@ from pathlib import Path
 
 GITHUB_API = "https://api.github.com/repos/Abyss-PlayerEG/api-tree/releases/latest"
 VERSION_RE = re.compile(r"^\d{2}\.\d{2}\.\d{2}\.\d{4}$")
+
+
+def _get_ssl_context() -> ssl.SSLContext:
+    try:
+        ctx = ssl.create_default_context()
+        urllib.request.urlopen("https://api.github.com", timeout=3, context=ctx)
+        return ctx
+    except Exception:
+        pass
+    if sys.platform == "darwin":
+        import subprocess
+        try:
+            keychains = [
+                "/System/Library/Keychains/SystemRootCertificates.keychain",
+                "/Library/Keychains/System.keychain",
+            ]
+            pem = b""
+            for kc in keychains:
+                try:
+                    pem += subprocess.check_output(
+                        ["/usr/bin/security", "find-certificate", "-a", "-p", kc],
+                        timeout=5
+                    )
+                except Exception:
+                    pass
+            if pem:
+                ctx = ssl.create_default_context()
+                ctx.load_verify_locations(cadata=pem.decode())
+                return ctx
+        except Exception:
+            pass
+    if sys.platform == "linux":
+        ca_paths = [
+            "/etc/ssl/certs/ca-certificates.crt",
+            "/etc/pki/tls/certs/ca-bundle.crt",
+            "/etc/ssl/ca-bundle.pem",
+        ]
+        for ca_path in ca_paths:
+            if Path(ca_path).exists():
+                try:
+                    return ssl.create_default_context(cafile=ca_path)
+                except Exception:
+                    pass
+    try:
+        import certifi  # type: ignore[import-not-found]
+        return ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        pass
+    import sys as _sys
+    print("Warning: SSL verification disabled, connection is not secure.", file=_sys.stderr)
+    return ssl._create_unverified_context()
 
 
 def _get_version_and_tag() -> tuple[str, str]:
@@ -73,7 +125,8 @@ def detect_install_type() -> str:
 def fetch_latest_release() -> dict[str, object] | None:
     req = urllib.request.Request(GITHUB_API, headers={"User-Agent": "api-tree"})
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        ctx = _get_ssl_context()
+        with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
             data: dict[str, object] = json.loads(resp.read().decode())
             return data
     except Exception:
@@ -113,7 +166,8 @@ def _get_install_dir() -> Path:
 def _download(url: str, dest: Path) -> bool:
     req = urllib.request.Request(url, headers={"User-Agent": "api-tree"})
     try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
+        ctx = _get_ssl_context()
+        with urllib.request.urlopen(req, timeout=60, context=ctx) as resp:
             dest.write_bytes(resp.read())
         return True
     except Exception as e:
