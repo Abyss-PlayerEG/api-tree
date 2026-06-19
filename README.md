@@ -2,14 +2,14 @@
 
 > 📖 [简体中文](readme/SimplifiedChinese.md) | [繁體中文](readme/TraditionalChinese.md)
 
-A lightweight command-line tool that renders OpenAPI (Swagger) specifications as beautiful terminal tree diagrams. Supports reading from local files or remote servers, with keyword-based search and filtering.
+A lightweight CLI tool that renders OpenAPI (Swagger) specifications as beautiful terminal tree diagrams. Supports local files and remote servers, with keyword search, LLM-optimized output, and RAG knowledge base export.
 
 ## Features
 
-- **Zero Dependencies** — Uses only the Python 3 standard library. No third-party packages required.
-- **Multi-Source** — Reads local JSON files or fetches from a remote OpenAPI server (default port `:8080`).
-- **Smart Search** — Use the `-s` flag to quickly filter endpoints by path, method, or summary.
-- **Color-Coded Methods** — HTTP methods are highlighted in distinct colors:
+- **Zero Dependencies** — Pure Python 3 standard library. No third-party packages required.
+- **Multi-Source** — Read local JSON files or fetch from remote OpenAPI servers.
+- **Smart Search** — `-s` flag filters endpoints by path, method, or summary.
+- **Color-Coded Methods** — HTTP methods highlighted in distinct colors:
 
   | Method | Color |
   |--------|-------|
@@ -19,59 +19,95 @@ A lightweight command-line tool that renders OpenAPI (Swagger) specifications as
   | DELETE | Red |
   | PATCH | Magenta |
 
-- **HTML Image Export** — Use the `--html` flag to save the tree as a styled HTML file with Catppuccin light/dark theme toggle. Output directory can be configured.
+- **HTML Export** — `--html` saves a styled HTML file with Catppuccin light/dark theme toggle.
+- **Agent Output** — `--agent-output` generates LLM-friendly formats for AI-assisted development.
+- **RAG Export** — `--rag-output` generates structured chunks for vector databases and retrieval systems.
+- **Smart Path Merging** — Auto-collapses single-child path segments for cleaner output.
+- **Springdoc Compatible** — Auto-appends `/v3/api-docs` to bare URLs.
 
-- **Agent Optimized Output** — Use `--agent-output` to generate LLM-friendly formats (markdown/json/curl) optimized for AI agents and automated workflows.
+## Installation
 
-- **RAG Knowledge Base Output** — Use `--rag-output` to generate structured chunks (jsonl/json) for vector databases and RAG retrieval systems.
+### pipx (recommended)
 
-- **Smart Path Merging** — Automatically collapses single-child path segments for cleaner output.
-- **Springdoc Compatible** — Auto-appends `/v3/api-docs` to the provided URL.
+```bash
+pipx install api-tree
+```
+
+### uv
+
+```bash
+uv tool install api-tree
+```
+
+### Standalone executables
+
+Download from [GitHub Releases](https://github.com/Abyss-PlayerEG/api-tree/releases) — no Python required.
 
 ## Quick Start
 
-### Prerequisites
-
-- Python 3.6+
-
-### Run
-
-Connect to `http://localhost:8080` by default:
 ```bash
-python main.py
+# Connect to local server (default: localhost:8080)
+api-tree
+
+# Specify a server
+api-tree http://localhost:9090
+
+# Read from local file
+api-tree ./openapi.json
 ```
 
-### Usage
+## Usage
+
+### Basic
 
 ```bash
-python main.py                          # Default: localhost:8080
-python main.py http://localhost:9090    # Custom server address
-python main.py /path/to/openapi.json   # Read from local file
-python main.py -s auth                  # Search endpoints containing 'auth'
-python main.py --html                   # Also export as HTML
-python main.py --agent-output markdown  # LLM-optimized output (markdown/json/curl)
-python main.py --rag-output jsonl       # RAG knowledge base output (jsonl/json)
-python main.py --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
-python main.py --init-config            # Generate default config file
-python main.py --show-config            # Show current config
-python main.py -h                       # Show help
+api-tree                              # Default: localhost:8080
+api-tree http://localhost:9090        # Custom server
+api-tree /path/to/openapi.json        # Local file
+api-tree -s auth                      # Search endpoints containing 'auth'
+api-tree --html                       # Export as HTML
 ```
 
-> If the URL has no path (e.g. `http://localhost:9090`), the tool automatically appends `/v3/api-docs`. To use a different endpoint, specify the full URL directly (e.g. `http://localhost:9090/swagger.json`).
+> If the URL has no path (e.g. `http://localhost:9090`), the tool auto-appends `/v3/api-docs`. To use a different endpoint, specify the full URL directly.
 
-## Configuration
+### Agent Output (for AI-assisted development)
 
-Generate a default config file:
+Generate LLM-optimized representations of your API structure. Useful when feeding API context to AI coding assistants.
+
 ```bash
-python main.py --init-config
+api-tree --agent-output markdown      # Clean markdown table
+api-tree --agent-output json          # Structured JSON
+api-tree --agent-output curl          # Ready-to-use curl commands
 ```
 
-Show current config:
+**Use cases:**
+- Feed API structure to ChatGPT/Claude for code generation
+- Generate curl commands for API testing
+- Create API reference docs for AI pair programming
+
+### RAG Knowledge Base Export
+
+Generate structured chunks for vector databases and retrieval-augmented generation systems.
+
 ```bash
-python main.py --show-config
+api-tree --rag-output jsonl           # One JSON object per line (for vector DB ingestion)
+api-tree --rag-output json            # Full JSON structure
+api-tree --rag-chunk-size 20          # Endpoints per chunk (default: 10)
 ```
 
-This creates `~/.config/api-tree/config.json` with default settings:
+**Use cases:**
+- Build a searchable API knowledge base
+- Enhance RAG systems with endpoint context
+- Feed structured data to embedding pipelines
+
+### Configuration
+
+```bash
+api-tree --init-config                # Generate ~/.config/api-tree/config.json
+api-tree --show-config                # Show current config
+```
+
+Config file:
 ```json
 {
     "output_dir": "~/Downloads",
@@ -79,27 +115,27 @@ This creates `~/.config/api-tree/config.json` with default settings:
 }
 ```
 
-Edit this file to customize:
-- `output_dir`: Output directory for HTML exports and other file outputs
-- `default_url`: Default OpenAPI server URL when no URL is specified
-
-## Build Executable
-
-Build a standalone `.exe` with PyInstaller:
+## Build from Source
 
 ```bash
-pip install pyinstaller
-build.bat
-```
+git clone https://github.com/Abyss-PlayerEG/api-tree.git
+cd api-tree
+uv sync
 
-Output: `dist/api-tree.exe`
+# Run directly
+uv run api-tree
+
+# Build executable
+bash script/mac-build.sh        # macOS / Linux
+script\win-build.bat            # Windows
+```
 
 ## Screenshots
 
-![Screenshot](/readme/img/1.png)
+![Terminal tree view](/readme/img/1.png)
 
-![Screenshot](/readme/img/2.png)
+![Search filter](/readme/img/2.png)
 
-![Screenshot](/readme/img/3.png)
+![HTML export](/readme/img/3.png)
 
-![Screenshot](/readme/img/4.png)
+![Color coding](/readme/img/4.png)
