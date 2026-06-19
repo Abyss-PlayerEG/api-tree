@@ -1,9 +1,5 @@
 # API Tree 自动更新功能设计
 
-## 概述
-
-api-tree 检测新版本并从 GitHub Releases 下载更新，支持便携版和安装版两种更新方式。
-
 ## 命令
 
 ```bash
@@ -11,73 +7,135 @@ api-tree update              # 检查并更新
 api-tree update --check      # 只检查，不更新
 ```
 
-## 版本标识文件
+## 核心问题
 
-打包时生成 `version` 文件，与可执行文件同目录，标识安装类型：
+### 1. 版本号从哪来
 
-| 文件内容 | 含义 | 更新方式 |
-|---------|------|---------|
-| `dev.zip` | 便携开发版 | 替换可执行文件 |
-| `v.zip` | 便携正式版 | 替换可执行文件 |
-| `v.exe` | 安装版 | 下载 setup.exe 静默运行 |
+打包时 PyInstaller 需要把版本号写死到代码里，而不是运行时读文件。
 
-### 生成时机
+**方案**：构建脚本生成 `_version.py`，PyInstaller 打包时通过 `--hidden-import` 确保包含。
 
-```bash
-# mac-build.sh（便携版）
-echo "v.zip" > dist/api-tree/version
-
-# win-build.bat（便携版打包后）
-echo "v.zip" > dist/api-tree/version
-
-# win-build.bat（Inno Setup 安装版打包时）
-echo "v.exe" > dist/api-tree/version
-
-# 开发环境
-echo "dev.zip" > src/api-tree/version
+```python
+# src/api_tree/app/_version.py（构建时生成，gitignore）
+__version__ = "26.06.20.0200"
 ```
 
-## 实际 Release 结构
-
+构建脚本流程：
 ```
-tag_name: "V26.06.01.1100"
-
-assets:
-├── api-tree-26.06.01.1148-macos.zip           ← macOS
-├── api-tree-26.06.01.1150-win64.zip           ← Windows 便携版
-├── api-tree-26.06.01.1150.py                  ← 单文件 Python 版
-├── api-tree-setup-26.06.01.1150-win64.exe     ← Windows 安装版
-└── SKILL.md
+1. merge_src.py 生成单文件 .py（同时生成 _version.py）
+2. pyinstaller --hidden-import=api_tree.app._version 打包
+3. 删除 _version.py（不提交到 git）
 ```
 
-## 更新流程
+### 2. 安装类型怎么判断
+
+用 `version` 文件 + exe 路径综合判断：
+
+```python
+def get_install_info() -> tuple[str, str]:
+    """
+    返回 (版本号, 安装类型)
+
+    安装类型:
+      "portable"  - 便携版（zip 解压）
+      "installer" - 安装版（setup.exe 安装）
+      "source"    - 源码运行
+    """
+    # 获取版本
+    version = "DEV"
+    try:
+        from api_tree.app._version import __version__
+        version = __version__
+    except ImportError:
+        pass
+
+    # 获取安装类型
+    if not getattr(sys, 'frozen', False):
+        return version, "source"
+
+    exe_dir = Path(sys.executable).parent
+    version_file = exe_dir / "version"
+    if version_file.exists():
+        content = version_file.read_text().strip()
+        if content == "installer":
+            return version, "installer"
+
+    return version, "portable"
+```
+
+`version` 文件内容：
+
+| 内容 | 含义 | 生成时机 |
+|------|------|---------|
+| `portable` | 便携版 | mac-build.sh / win-build.bat 便携版打包后 |
+| `installer` | 安装版 | win-build.bat Inno Setup 打包前 |
+| （不存在） | 源码运行 | 不生成 |
+
+### 3. 频道怎么判断
+
+不搞复杂频道系统，只看 tag 前缀：
+
+```python
+def get_channel_from_version(version: str) -> str:
+    if version.startswith("DEV"):
+        return "dev"
+    if version.startswith("BETA"):
+        return "beta"
+    return "stable"
+```
+
+### 4. 怎么查最新版本
+
+```python
+# 查 /releases，按频道过滤
+def fetch_latest_release(channel: str) -> dict | None:
+    prefix = {"stable": "V", "dev": "DEV", "beta": "BETA"}[channel]
+    # GET /repos/.../releases
+    # 找第一个 tag_name.startswith(prefix) 且非 draft 的 release
+```
+
+### 5. 单文件 .py 怎么更新
+
+单文件版不支持自更新，提示用户手动下载：
+
+```python
+if install_type == "source":
+    print("Source mode. Run `git pull` to update.")
+    return False
+```
+
+## 完整流程
 
 ```
 api-tree update
 │
-├─ 1. 读取当前版本（_version）
-├─ 2. 读取安装类型（version 文件）
+├─ 1. get_install_info() → (version, install_type)
 │
-├─ 3. 请求 GitHub Releases API
+├─ 2. get_channel_from_version(version) → channel
+│
+├─ 3. fetch_latest_release(channel) → release
 │
 ├─ 4. 对比版本
 │     ├─ 已是最新 → "Already up to date"
-│     └─ 有新版本 → "New version: V26.06.20.1200"
+│     └─ 有新版本 → "New version: V26.06.20.1200 (current: 26.06.01.1100)"
 │
-├─ 5. 根据安装类型选择更新方式
+├─ 5. 根据 install_type 选择更新方式
 │     │
-│     ├─ 便携版（dev.zip / v.zip）
+│     ├─ "source"
+│     │   └─ 提示 "Run `git pull` to update"
+│     │
+│     ├─ "portable"
 │     │   ├─ 下载对应平台 zip
 │     │   ├─ SHA256 校验
 │     │   ├─ 解压
 │     │   ├─ 替换可执行文件
-│     │   └─ "Updated to V26.06.20.1200"
+│     │   └─ "Updated. Please restart."
 │     │
-│     └─ 安装版（v.exe）
+│     └─ "installer"
 │         ├─ 下载 setup.exe
 │         ├─ SHA256 校验
-│         ├─ 静默运行：setup.exe /VERYSILENT /NORESTART
-│         └─ "Updated to V26.06.20.1200, please restart"
+│         ├─ 打开安装包（os.startfile）
+│         └─ "Installer opened. Follow the prompts."
 │
 └─ 6. 完成
 ```
@@ -90,339 +148,96 @@ api-tree update
 | Windows | `*-win64.zip`（排除 setup） | `*-setup-*-win64.exe` |
 | Linux | `*-linux.zip` | 无 |
 
-## 模块设计
-
-### updater.py
-
-```python
-import hashlib
-import json
-import os
-import platform
-import shutil
-import subprocess
-import sys
-import tempfile
-import urllib.request
-import zipfile
-from pathlib import Path
-
-GITHUB_API = "https://api.github.com/repos/Abyss-PlayerEG/api-tree/releases/latest"
-
-
-def get_current_version() -> str:
-    """获取当前版本"""
-    try:
-        from api_tree._version import __version__
-        return __version__
-    except ImportError:
-        return "DEV"
-
-
-def get_install_type() -> str:
-    """
-    读取安装类型
-
-    Returns:
-        "dev.zip" / "v.zip" / "v.exe" / "unknown"
-    """
-    exe_path = get_current_exe_path()
-    if exe_path is None:
-        return "dev.zip"
-
-    version_file = exe_path.parent / "version"
-    if version_file.exists():
-        return version_file.read_text().strip()
-
-    return "unknown"
-
-
-def parse_version(v: str) -> tuple[int, ...]:
-    """V26.06.01.1100 → (26, 6, 1, 1100)"""
-    clean = v.lstrip("Vv")
-    parts = []
-    for p in clean.split("."):
-        try:
-            parts.append(int(p))
-        except ValueError:
-            break
-    return tuple(parts)
-
-
-def fetch_latest_release() -> dict:
-    """从 GitHub 获取最新 release 信息"""
-    req = urllib.request.Request(GITHUB_API, headers={
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "api-tree",
-    })
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read())
-
-
-def get_download_asset(release: dict, install_type: str) -> dict | None:
-    """
-    根据平台和安装类型选择下载资源
-
-    Args:
-        release: GitHub release 数据
-        install_type: "dev.zip" / "v.zip" / "v.exe"
-    """
-    system = platform.system().lower()
-    assets = release.get("assets", [])
-    is_installer = install_type.endswith(".exe")
-
-    for asset in assets:
-        name = asset["name"].lower()
-
-        if system == "darwin":
-            if "macos" in name and name.endswith(".zip"):
-                return asset
-
-        elif system == "windows":
-            if is_installer:
-                if "setup" in name and "win64" in name and name.endswith(".exe"):
-                    return asset
-            else:
-                if "win64" in name and name.endswith(".zip") and "setup" not in name:
-                    return asset
-
-        elif system == "linux":
-            if "linux" in name and name.endswith(".zip"):
-                return asset
-
-    return None
-
-
-def verify_hash(filepath: str, expected_sha256: str) -> bool:
-    """校验文件 SHA256"""
-    sha256 = hashlib.sha256()
-    with open(filepath, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            sha256.update(chunk)
-    return sha256.hexdigest() == expected_sha256
-
-
-def get_current_exe_path() -> Path | None:
-    """获取当前可执行文件路径，非打包环境返回 None"""
-    if getattr(sys, 'frozen', False):
-        return Path(sys.executable)
-    return None
-
-
-def check_update() -> tuple[str, str] | None:
-    """
-    检查是否有新版本
-
-    Returns:
-        (当前版本, 最新版本) 如果有更新，否则 None
-    """
-    current = get_current_version()
-    release = fetch_latest_release()
-    latest = release.get("tag_name", "")
-
-    if not latest:
-        return None
-
-    if parse_version(latest) <= parse_version(current):
-        return None
-
-    return current, latest
-
-
-def _update_portable(asset: dict, expected_hash: str) -> bool:
-    """便携版更新：下载 zip → 替换可执行文件"""
-    download_url = asset["browser_download_url"]
-    print(f"Downloading {asset['name']}...")
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        zip_path = os.path.join(tmpdir, asset["name"])
-
-        try:
-            urllib.request.urlretrieve(download_url, zip_path)
-        except Exception as e:
-            print(f"Error: Download failed: {e}")
-            return False
-
-        if expected_hash and not verify_hash(zip_path, expected_hash):
-            print("Error: SHA256 verification failed.")
-            return False
-
-        try:
-            with zipfile.ZipFile(zip_path) as zf:
-                zf.extractall(tmpdir)
-        except zipfile.BadZipFile:
-            print("Error: Invalid zip file.")
-            return False
-
-        exe_name = "api-tree.exe" if platform.system() == "Windows" else "api-tree"
-        extracted = None
-        for root, _, files in os.walk(tmpdir):
-            if exe_name in files:
-                extracted = os.path.join(root, exe_name)
-                break
-
-        if not extracted:
-            print("Error: Executable not found in archive.")
-            return False
-
-        current_exe = get_current_exe_path()
-        if current_exe is None:
-            print("Running from source. Cannot self-update.")
-            print(f"Download manually: {download_url}")
-            return False
-
-        backup = current_exe.with_suffix(".bak")
-        shutil.copy2(current_exe, backup)
-
-        try:
-            shutil.copy2(extracted, current_exe)
-            os.chmod(current_exe, 0o755)
-            backup.unlink(missing_ok=True)
-            return True
-        except Exception as e:
-            shutil.copy2(backup, current_exe)
-            backup.unlink(missing_ok=True)
-            print(f"Update failed: {e}")
-            return False
-
-
-def _update_installer(asset: dict, expected_hash: str) -> bool:
-    """安装版更新：下载 setup.exe → 静默运行"""
-    download_url = asset["browser_download_url"]
-    print(f"Downloading {asset['name']}...")
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        exe_path = os.path.join(tmpdir, asset["name"])
-
-        try:
-            urllib.request.urlretrieve(download_url, exe_path)
-        except Exception as e:
-            print(f"Error: Download failed: {e}")
-            return False
-
-        if expected_hash and not verify_hash(exe_path, expected_hash):
-            print("Error: SHA256 verification failed.")
-            return False
-
-        print("Running installer...")
-        try:
-            subprocess.run([exe_path, "/VERYSILENT", "/NORESTART"], check=True)
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"Installer failed: {e}")
-            return False
-
-
-def do_update() -> bool:
-    """
-    执行更新
-
-    Returns:
-        True 更新成功，False 更新失败
-    """
-    current = get_current_version()
-
-    try:
-        release = fetch_latest_release()
-    except Exception as e:
-        print(f"Error: Failed to check for updates: {e}")
-        return False
-
-    latest = release.get("tag_name", "")
-
-    if parse_version(latest) <= parse_version(current):
-        print("Already up to date.")
-        return False
-
-    print(f"New version: {latest} (current: {current})")
-
-    install_type = get_install_type()
-    asset = get_download_asset(release, install_type)
-
-    if not asset:
-        print("Error: No download found for your platform.")
-        return False
-
-    expected_hash = asset.get("digest", "").replace("sha256:", "")
-
-    if install_type.endswith(".exe"):
-        success = _update_installer(asset, expected_hash)
-    else:
-        success = _update_portable(asset, expected_hash)
-
-    if success:
-        print(f"Updated to {latest}")
-        if install_type.endswith(".exe"):
-            print("Please restart api-tree.")
-
-    return success
-```
-
-## 集成到 CLI
-
-### args.py 添加参数
-
-```python
-elif argv[i] == "update":
-    args.update = True
-    i += 1
-elif argv[i] == "--check" and args.update:
-    args.update_check_only = True
-    i += 1
-```
-
-### core.py 添加处理
-
-```python
-if args.update:
-    from .updater import check_update, do_update
-    if args.update_check_only:
-        result = check_update()
-        if result:
-            print(f"New version: {result[1]} (current: {result[0]})")
-        else:
-            print("Already up to date.")
-    else:
-        do_update()
-    return
-```
-
-## 构建脚本修改
+## 文件清单
+
+### 新建
+
+| 文件 | 说明 |
+|------|------|
+| `src/api_tree/app/updater.py` | 更新逻辑 |
+| `src/api_tree/app/_version.py` | 构建时生成，gitignore |
+
+### 修改
+
+| 文件 | 改动 |
+|------|------|
+| `src/api_tree/app/args.py` | 添加 `update` / `--check` 参数 |
+| `src/api_tree/app/core.py` | 添加 update 命令处理 |
+| `src/api_tree/main.py` | 帮助文本添加 update |
+| `script/mac-build.sh` | 生成 _version.py + version 文件 + hidden-import |
+| `script/win-build.bat` | 同上 |
+| `.gitignore` | 添加 `_version.py` |
+
+### 不动
+
+| 文件 | 原因 |
+|------|------|
+| `merge_src.py` | 单文件版不支持自更新，不需要改 |
+| `args.py` 的 `__install_type__` | 不需要，改用运行时判断 |
+| `setup.iss` | 已经 `dist\api-tree\*` 全量打包 |
+
+## 构建脚本改动
 
 ### mac-build.sh
 
 ```bash
-# 打包后生成 version 文件
-echo "v.zip" > dist/api-tree/version
+# 生成 _version.py
+echo "__version__ = \"$VERSION\"" > src/api_tree/app/_version.py
+
+# PyInstaller 打包（hidden-import 确保包含 _version）
+uv run pyinstaller ... --hidden-import=api_tree.app._version src/api_tree/main.py
+
+# 写 version 文件（便携版）
+echo "portable" > dist/api-tree/version
+
+# 清理 _version.py
+rm -f src/api_tree/app/_version.py
 ```
 
 ### win-build.bat
 
-```bash
-REM 便携版打包后
-echo v.zip > dist\api-tree\version
+```bat
+REM 生成 _version.py
+echo __version__ = "%VERSION%" > src\api_tree\app\_version.py
 
-REM Inno Setup 安装版打包时
-echo v.exe > dist\api-tree\version
+REM PyInstaller 打包
+uv run pyinstaller ... --hidden-import=api_tree.app._version src\api_tree\main.py
+
+REM 便携版 version 文件
+echo portable > dist\api-tree\version
+
+REM 打包便携版 zip
+
+REM 安装版 version 文件
+echo installer > dist\api-tree\version
+
+REM Inno Setup 打包
+
+REM 清理
+del src\api_tree\app\_version.py
 ```
 
 ## 注意事项
 
 | 问题 | 方案 |
 |------|------|
-| 非打包环境（源码运行） | 提示 `git pull` |
-| Windows 安装版文件锁定 | setup.exe /VERYSILENT 自动处理 |
-| 下载失败 | 回滚到备份 |
-| 权限不足 | 提示手动替换 |
-| hash 校验失败 | 中止更新，保留旧版本 |
-| macOS 无安装版 | 只支持便携版更新 |
+| PyInstaller 不打包 _version.py | `--hidden-import=api_tree.app._version` |
+| 单文件 .py 版本号 | merge_src.py 替换 `__version__` |
+| 单文件 .py 自更新 | 不支持，提示 git pull |
+| macOS SSL 证书 | 用 `ssl.create_default_context()` + certifi 降级 |
+| 下载失败 | 回滚到 .bak 备份 |
+| Windows 文件锁定 | 安装版用 `os.startfile` 打开，用户自己装 |
 
 ## 开发计划
 
-- [ ] 创建 `updater.py` 模块
-- [ ] 添加 `update` 和 `update --check` 命令
-- [ ] 修改构建脚本生成 `version` 文件
-- [ ] macOS 测试
+- [ ] `.gitignore` 添加 `_version.py`
+- [ ] 创建 `updater.py`
+- [ ] `args.py` 添加 `update` / `--check`
+- [ ] `core.py` 添加 update 处理
+- [ ] `main.py` 帮助文本
+- [ ] `mac-build.sh` 改动
+- [ ] `win-build.bat` 改动
+- [ ] macOS 便携版测试
 - [ ] Windows 便携版测试
 - [ ] Windows 安装版测试
 - [ ] 更新 README
