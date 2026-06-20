@@ -15,6 +15,7 @@ description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的
 | `api-tree <url>` | 连接指定 OpenAPI 文档地址 |
 | `api-tree <file.json>` | 读取本地 OpenAPI JSON 文件 |
 | `api-tree <url> -s <keyword>` | 搜索含关键词的路径/方法/摘要 |
+| `api-tree <url> -s '$:{<regex>}'` | 正则搜索（支持 |、^、$ 等） |
 | `api-tree <url> --html` | 同时导出带主题切换的 HTML 文件 |
 | `api-tree <url> --agent-output <format>` | 为 LLM Agent 优化的输出（markdown/json/curl） |
 | `api-tree <url> --rag-output <format>` | 为 RAG 知识库优化的输出（jsonl/json） |
@@ -29,6 +30,7 @@ description: 使用 api-tree CLI 工具查看和搜索 OpenAPI/Swagger 接口的
 
 - **位置参数**: OpenAPI 文档的 URL 或本地 JSON 文件路径。若 URL 不含具体路径（以 `/` 结尾或无路径），自动追加 `/v3/api-docs`。
 - **`-s <keyword>`**: 搜索过滤（不区分大小写），匹配路径、摘要或 HTTP 方法。
+- **`-s '$:{<regex>}'`**: 正则搜索，使用 `$:{}` 包裹正则表达式。支持所有 Python `re` 模块语法，如 `user|pet`、`^/api`、`\d+` 等。
 - **`--html`**: 额外生成 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出目录可通过配置文件自定义。
 - **`--init-config`**: 在 `~/.config/api-tree/` 目录下生成默认配置文件，用于自定义输出目录和默认URL等设置。
 - **`--show-config`**: 显示当前配置文件内容和位置。

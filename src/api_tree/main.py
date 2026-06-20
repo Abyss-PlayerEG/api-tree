@@ -18,6 +18,13 @@ Usage:
     api-tree -v, --version            # Show version
     api-tree -h, --help               # Show help
 
+Regex Search:
+    Use $:{pattern} syntax with -s flag for regex matching.
+    api-tree -s '$:{user|pet}'        # Match "user" or "pet"
+    api-tree -s '$:{^/api/v1}'        # Paths starting with /api/v1
+    api-tree -s '$:{GET|POST}'        # Match GET or POST methods
+    api-tree -s '$:{create|update}'   # Match create or update
+
 GitHub: https://github.com/Abyss-PlayerEG/api-tree
 
 """
