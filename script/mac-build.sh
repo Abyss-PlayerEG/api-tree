@@ -30,10 +30,16 @@ rm -rf build dist
 # Generate version from current date (yy.mm.dd.hhmm)
 VERSION=$(date +%y.%m.%d.%H%M)
 
-# Optional version prefix
-read -rp "Version prefix (Enter to skip): " PREFIX
-if [[ -n "$PREFIX" ]]; then
-    VERSION="${PREFIX}-${VERSION}"
+# Optional version prefix or test-build
+if [[ "${1:-}" == "test-build" ]]; then
+    VERSION="01.01.01.0001"
+    echo "  Test build mode: version=${VERSION}"
+    echo ""
+else
+    read -rp "Version prefix (Enter to skip): " PREFIX
+    if [[ -n "$PREFIX" ]]; then
+        VERSION="${PREFIX}-${VERSION}"
+    fi
 fi
 
 # Generate single-file version

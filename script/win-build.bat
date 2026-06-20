@@ -40,9 +40,16 @@ if not defined VERSION set "VERSION=26.05.31.1430"
 REM Save numeric version for Inno Setup
 set "NUMERIC_VERSION=%VERSION%"
 
-REM Optional version prefix
-set /p "PREFIX=Version prefix (Enter to skip): "
-if defined PREFIX set "VERSION=%PREFIX%-%VERSION%"
+REM Optional version prefix or test-build
+if "%1"=="test-build" (
+    set "VERSION=01.01.01.0001"
+    set "NUMERIC_VERSION=01.01.01.0001"
+    echo   Test build mode: version=!VERSION!
+    echo.
+) else (
+    set /p "PREFIX=Version prefix (Enter to skip): "
+    if defined PREFIX set "VERSION=!PREFIX!-!VERSION!"
+)
 
 REM Generate single-file version from src/app/
 echo [1.5/4] Generating single-file api-tree-%VERSION%.py...
