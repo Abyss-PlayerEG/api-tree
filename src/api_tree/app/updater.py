@@ -127,7 +127,7 @@ def detect_install_type() -> str:
         return "macos"
     if tag == "win64-zip":
         install_dir = Path(os.environ.get("LOCALAPPDATA", "")) / "api-tree"
-        if (install_dir / "uninstall.exe").exists():
+        if (install_dir / "unins000.exe").exists():
             return "win64-setup"
         return "win64"
     return "unknown"
@@ -267,7 +267,9 @@ def _rollback_dir(dir_path: Path, backup: Path) -> None:
 def _cleanup_backups(install_dir: Path, script_path: Path | None = None) -> None:
     bak_dir = install_dir.parent / f"{install_dir.name}.bak"
     if bak_dir.is_dir():
-        shutil.rmtree(bak_dir)
+        shutil.rmtree(bak_dir, ignore_errors=True)
+    for old_file in install_dir.glob("**/*.old"):
+        old_file.unlink(missing_ok=True)
     if script_path:
         bak_file = script_path.parent / f"{script_path.name}.bak"
         bak_file.unlink(missing_ok=True)
@@ -293,6 +295,22 @@ def _replace_py(asset_url: str, sha256: str | None, file_size: int = 0) -> bool:
         return False
 
 
+def _safe_remove(path: Path) -> bool:
+    try:
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+        return True
+    except PermissionError:
+        bak = path.with_suffix(path.suffix + ".old")
+        try:
+            path.rename(bak)
+            return True
+        except Exception:
+            return False
+
+
 def _replace_zip(asset_url: str, sha256: str | None, file_size: int = 0) -> bool:
     install_dir = _get_install_dir()
     with tempfile.TemporaryDirectory() as tmp:
@@ -313,10 +331,7 @@ def _replace_zip(asset_url: str, sha256: str | None, file_size: int = 0) -> bool
             for item in install_dir.iterdir():
                 if item.name == "config.json":
                     continue
-                if item.is_dir():
-                    shutil.rmtree(item)
-                else:
-                    item.unlink()
+                _safe_remove(item)
             for item in source.iterdir():
                 dest = install_dir / item.name
                 if item.is_dir():
@@ -328,9 +343,9 @@ def _replace_zip(asset_url: str, sha256: str | None, file_size: int = 0) -> bool
         except Exception as e:
             print(f"Update failed, rolling back: {e}")
             _rollback_dir(install_dir, backup)
-            shutil.rmtree(backup)
+            shutil.rmtree(backup, ignore_errors=True)
             return False
-        shutil.rmtree(backup)
+        shutil.rmtree(backup, ignore_errors=True)
         return True
 
 
