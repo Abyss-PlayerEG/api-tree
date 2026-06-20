@@ -96,6 +96,22 @@ def count_endpoints(node: TreeNode) -> int:
     return total
 
 
+def count_matching_endpoints(node: TreeNode, search: str) -> int:
+    """
+    递归统计匹配搜索关键词的端点数量
+    Recursively count endpoints matching search keyword.
+    """
+    count = 0
+    for ep in node["endpoints"]:
+        if (search in ep["path_lower"]
+                or search in ep["summary_lower"]
+                or search in ep["method_lower"]):
+            count += 1
+    for child in node["children"].values():
+        count += count_matching_endpoints(child, search)
+    return count
+
+
 class TreeMatcher:
     """
     预计算匹配结果,带记忆化缓存,避免搜索时重复递归

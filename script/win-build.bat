@@ -40,38 +40,43 @@ if not defined VERSION set "VERSION=26.05.31.1430"
 REM Save numeric version for Inno Setup
 set "NUMERIC_VERSION=%VERSION%"
 
-REM Optional version prefix
-set /p "PREFIX=Version prefix (Enter to skip): "
-if defined PREFIX set "VERSION=%PREFIX%-%VERSION%"
+REM Optional version prefix or test-build
+if "%1"=="test-build" (
+    set "VERSION=01.01.01.0001"
+    set "NUMERIC_VERSION=01.01.01.0001"
+    echo   Test build mode: version=!VERSION!
+    echo.
+) else (
+    set /p "PREFIX=Version prefix (Enter to skip): "
+    if defined PREFIX set "VERSION=!PREFIX!-!VERSION!"
+)
 
 REM Generate single-file version from src/app/
 echo [1.5/4] Generating single-file api-tree-%VERSION%.py...
-uv run python src/tools/merge_src.py %VERSION%
+uv run python src/api_tree/tools/merge_src.py %VERSION% --tag python-script
 
-REM Run PyInstaller via uv (onedir for fast startup)
-echo [2/4] Building executable...
-uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico src/main.py
+REM ── Build 1: win64-zip ──────────────────────────
+echo [2/4] Building win64-zip executable...
+uv run python src/api_tree/tools/merge_src.py %VERSION% --tag win64-zip --version-only
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico src/api_tree/main.py
 if %errorlevel% neq 0 (
     echo.
     echo [ERROR] Build failed!
-    del src\_version.py >nul 2>nul
+    del src\api_tree\_version.py >nul 2>nul
     exit /b 1
 )
 
-REM Cleanup build-time version file
-del src\_version.py >nul 2>nul
-
-REM Show executable result
-echo [3/4] Executable build complete.
-echo.
-echo ---------------------------------------
 if exist dist\api-tree\api-tree.exe (
     echo   Output : dist\api-tree\api-tree.exe
 ) else (
     echo [WARNING] Output file not found.
 )
 
-REM Create zip archive of dist\api-tree
+REM Copy install/uninstall scripts to dist for zip distribution
+copy src\api_tree\installer\Windows\install.bat dist\api-tree\ >nul
+copy src\api_tree\installer\Windows\uninstall.bat dist\api-tree\ >nul
+
+REM Create zip archive
 set "ZIP_NAME=api-tree-%VERSION%-win64.zip"
 if exist "dist\!ZIP_NAME!" del "dist\!ZIP_NAME!"
 powershell -NoProfile -Command "Compress-Archive -Path 'dist\api-tree\*' -DestinationPath 'dist\!ZIP_NAME!' -Force"
@@ -81,7 +86,34 @@ if !errorlevel! equ 0 (
     echo [WARNING] Zip creation failed.
 )
 
-REM ── Generate installer with Inno Setup ──────────────
+REM Remove install scripts and zip build output
+del dist\api-tree\install.bat >nul 2>nul
+del dist\api-tree\uninstall.bat >nul 2>nul
+
+REM ── Build 2: win64-setup ────────────────────────
+echo [3/4] Building win64-setup executable...
+uv run python src/api_tree/tools/merge_src.py %VERSION% --tag win64-setup --version-only
+
+REM Clean PyInstaller cache for fresh build
+if exist build rmdir /s /q build
+if exist dist\api-tree rmdir /s /q dist\api-tree
+if exist api-tree.spec del api-tree.spec
+
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --icon=icon.ico src/api_tree/main.py
+if %errorlevel% neq 0 (
+    echo.
+    echo [ERROR] Setup build failed!
+    del src\api_tree\_version.py >nul 2>nul
+    exit /b 1
+)
+
+if exist dist\api-tree\api-tree.exe (
+    echo   Output : dist\api-tree\api-tree.exe
+) else (
+    echo [WARNING] Output file not found.
+)
+
+REM ── Generate installer with Inno Setup ──────────
 echo [4/4] Generating installer...
 
 set ISCC=
@@ -108,6 +140,10 @@ if !errorlevel! neq 0 (
 echo   Installer: dist\api-tree-setup-v*.exe
 
 :done
+
+REM Cleanup build-time version file
+del src\api_tree\_version.py >nul 2>nul
+
 echo   Start  : %START_TIME%
 echo   End    : %TIME%
 echo ---------------------------------------

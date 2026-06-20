@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .color import Color
 from .fetcher import fetch_openapi
-from .tree import build_tree, count_endpoints, TreeMatcher
+from .tree import build_tree, count_endpoints, count_matching_endpoints, TreeMatcher
 from .console import print_tree
 from .html import render_html_tree
 from .agent_output import generate_agent_output
@@ -70,6 +70,35 @@ def run(args: Args) -> None:
     执行主流程:获取 OpenAPI → 构建树 → 按模式输出
     Run the API tree application.
     """
+    # Handle update commands
+    if args.update:
+        try:
+            from .updater import is_release_version, check_update, perform_update, fetch_latest_release
+        except ImportError:
+            import sys as _sys
+            _g = _sys.modules.get("__main__", _sys.modules[__name__]).__dict__
+            is_release_version = _g["is_release_version"]
+            check_update = _g["check_update"]
+            perform_update = _g["perform_update"]
+            fetch_latest_release = _g["fetch_latest_release"]
+        if not is_release_version():
+            print("Current version is not within the supported update range.")
+            return
+        if args.update_check:
+            if not fetch_latest_release():
+                print("Failed to check for updates. Please check your network connection.")
+                return
+            result = check_update()
+            if result:
+                current, latest = result
+                print(f"New version available: {current} -> {latest}")
+                print("Run 'api-tree update' to install.")
+            else:
+                print("Already up to date.")
+        else:
+            perform_update()
+        return
+
     # Handle config commands
     if args.init_config:
         _init_config()
@@ -105,6 +134,7 @@ def run(args: Args) -> None:
     
     # Normal terminal output
     if args.search:
+        matching_total = count_matching_endpoints(tree, args.search)
         print(f'\nMatched - "{args.search}"')
     else:
         print(f"\n{Color.BOLD}{title} API Endpoint Tree{Color.RESET}  ({total} endpoints)")
@@ -112,7 +142,9 @@ def run(args: Args) -> None:
     matcher = TreeMatcher(tree, args.search) if args.search else None
     print_tree(tree, search=args.search, matcher=matcher)
     print()
-    if not args.search:
+    if args.search:
+        print(f"{Color.DIM}Total: {matching_total} endpoints{Color.RESET}")
+    else:
         print(f"{Color.DIM}Total: {total} endpoints{Color.RESET}")
     
     if args.output_html:

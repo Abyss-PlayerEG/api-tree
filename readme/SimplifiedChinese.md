@@ -2,14 +2,14 @@
 
 > ⬆️ [English](../README.md) | [繁體中文](TraditionalChinese.md)
 
-一个轻量级的命令行工具，用于从 OpenAPI (Swagger) 规范生成美观的终端树状图。支持从本地文件、远程服务器读取数据，并具备搜索过滤功能。
+一个轻量级 CLI 工具，将 OpenAPI (Swagger) 规范渲染为美观的终端树状图。支持本地文件和远程服务器，具备关键词搜索、LLM 优化输出和 RAG 知识库导出功能。
 
 ## 特性
 
-- **零依赖** — 仅使用 Python 3 标准库，无需安装任何第三方包。
-- **多源支持** — 支持读取本地 JSON 文件或远程 OpenAPI 服务器（默认端口 `:8080`）。
-- **智能搜索** — 通过 `-s` 参数快速过滤包含特定关键词的路径、方法或摘要。
-- **色彩高亮** — 不同 HTTP 方法使用不同颜色区分：
+- **零依赖** — 纯 Python 3 标准库，无需安装第三方包。
+- **多源支持** — 读取本地 JSON 文件或远程 OpenAPI 服务器。
+- **智能搜索** — `-s` 参数按路径、方法或摘要过滤接口。
+- **色彩高亮** — 不同 HTTP 方法使用不同颜色：
 
   | 方法 | 颜色 |
   |------|------|
@@ -19,59 +19,108 @@
   | DELETE | 红色 |
   | PATCH | 紫色 |
 
-- **HTML 图像导出** — 使用 `--html` 参数将树状图导出为带样式的 HTML 文件，内置 Catppuccin 浅色/暗色主题切换。输出目录可配置。
+- **HTML 导出** — `--html` 导出带 Catppuccin 浅色/暗色主题切换的 HTML 文件。
+- **Agent 输出** — `--agent-output` 生成 LLM 友好格式，适用于 AI 辅助开发。
+- **RAG 导出** — `--rag-output` 生成结构化切片，适用于向量数据库和检索系统。
+- **智能路径合并** — 自动折叠单子节点路径段，输出更简洁。
+- **Springdoc 兼容** — 自动在裸 URL 后追加 `/v3/api-docs`。
 
-- **Agent 优化输出** — 使用 `--agent-output` 参数生成 LLM 友好格式（markdown/json/curl），专为 AI 代理和自动化工作流优化。
+## 安装
 
-- **RAG 知识库输出** — 使用 `--rag-output` 参数生成结构化切片（jsonl/json），适用于向量数据库和 RAG 检索系统。
+### 独立可执行文件
 
-- **智能路径合并** — 自动合并单子节点路径段，输出更简洁。
-- **Springdoc 兼容** — 自动在 URL 后追加 `/v3/api-docs` 路径。
+从 [GitHub Releases](https://github.com/Abyss-PlayerEG/api-tree/releases) 下载，无需 Python 环境。
+
+### 从源码构建
+
+```bash
+git clone https://github.com/Abyss-PlayerEG/api-tree.git
+cd api-tree
+uv sync
+uv run api-tree
+```
+
+### 未来计划
+
+- [ ] `pip install api-tree`
+- [ ] `pipx install api-tree`
+- [ ] `brew install api-tree`
+- [ ] `winget install api-tree`
 
 ## 快速开始
 
-### 前置要求
-
-- Python 3.6+
-
-### 运行
-
-默认连接 `http://localhost:8080`：
 ```bash
-python main.py
+# 连接本地服务器（默认 localhost:8080）
+api-tree
+
+# 指定服务器
+api-tree http://localhost:9090
+
+# 读取本地文件
+api-tree ./openapi.json
 ```
 
-### 用法
+## 用法
+
+### 基础
 
 ```bash
-python main.py                          # 默认连接 localhost:8080
-python main.py http://localhost:9090    # 指定服务器地址
-python main.py /path/to/openapi.json   # 读取本地 JSON 文件
-python main.py -s auth                  # 搜索含 "auth" 的接口
-python main.py --html                   # 同时导出 HTML
-python main.py --agent-output markdown  # LLM 优化输出（markdown/json/curl）
-python main.py --rag-output jsonl       # RAG 知识库输出（jsonl/json）
-python main.py --rag-chunk-size 20      # RAG 切片大小（默认：10）
-python main.py --init-config            # 生成默认配置文件
-python main.py --show-config            # 显示当前配置
-python main.py -h                       # 查看帮助
+api-tree                              # 默认连接 localhost:8080
+api-tree http://localhost:9090        # 指定服务器
+api-tree /path/to/openapi.json        # 本地文件
+api-tree -s auth                      # 搜索含 "auth" 的接口
+api-tree --html                       # 导出 HTML
 ```
 
-> 如果 URL 不含路径（如 `http://localhost:9090`），工具会自动追加 `/v3/api-docs`。若接口文档在其他路径，请直接指定完整 URL（如 `http://localhost:9090/swagger.json`）。
+> 如果 URL 不含路径（如 `http://localhost:9090`），工具会自动追加 `/v3/api-docs`。若接口文档在其他路径，请直接指定完整 URL。
 
-## 配置
+### Agent 输出（AI 辅助开发）
 
-生成默认配置文件：
+生成 LLM 优化的 API 结构表示，适用于向 AI 编程助手提供 API 上下文。
+
 ```bash
-python main.py --init-config
+api-tree --agent-output markdown      # Markdown 表格
+api-tree --agent-output json          # 结构化 JSON
+api-tree --agent-output curl          # 可直接使用的 curl 命令
 ```
 
-显示当前配置：
+**使用场景：**
+- 将 API 结构喂给 ChatGPT/Claude 生成代码
+- 批量生成 curl 命令用于接口测试
+- 为 AI 结对编程创建 API 参考文档
+
+### RAG 知识库导出
+
+为向量数据库和 RAG 检索系统生成结构化切片。
+
 ```bash
-python main.py --show-config
+api-tree --rag-output jsonl           # 每行一个 JSON 对象（向量库导入用）
+api-tree --rag-output json            # 完整 JSON 结构
+api-tree --rag-chunk-size 20          # 每个切片的接口数（默认：10）
 ```
 
-这会在 `~/.config/api-tree/config.json` 创建默认配置：
+**使用场景：**
+- 构建可搜索的 API 知识库
+- 为 RAG 系统注入接口上下文
+- 向嵌入模型管道喂结构化数据
+
+### 配置
+
+```bash
+api-tree --init-config                # 生成 ~/.config/api-tree/config.json
+api-tree --show-config                # 查看当前配置
+```
+
+### 更新
+
+```bash
+api-tree update --check               # 检查新版本（不安装）
+api-tree update                       # 下载并安装最新版本
+```
+
+支持单文件 `.py`、macOS zip、Windows zip 和 Windows 安装包。下载自动校验 SHA256，失败时自动回滚。
+
+配置文件：
 ```json
 {
     "output_dir": "~/Downloads",
@@ -79,27 +128,12 @@ python main.py --show-config
 }
 ```
 
-编辑此文件可自定义：
-- `output_dir`: HTML 导出和其他文件输出的目录
-- `default_url`: 未指定 URL 时使用的默认 OpenAPI 服务器地址
-
-## 构建可执行文件
-
-使用 PyInstaller 构建独立 `.exe`：
-
-```bash
-pip install pyinstaller
-build.bat
-```
-
-输出路径：`dist/api-tree.exe`
-
 ## 效果展示
 
-![Screenshot](/readme/img/1.png)
+![终端树状图](/readme/img/1.png)
 
-![Screenshot](/readme/img/2.png)
+![搜索过滤](/readme/img/2.png)
 
-![Screenshot](/readme/img/3.png)
+![HTML 导出](/readme/img/3.png)
 
-![Screenshot](/readme/img/4.png)
+![色彩高亮](/readme/img/4.png)

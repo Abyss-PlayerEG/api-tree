@@ -14,7 +14,7 @@ BANNER = """
 ██╔══██║██╔═══╝ ██║       ██║   ██╔══██╗██╔══╝  ██╔══╝
 ██║  ██║██║     ██║       ██║   ██║  ██║███████╗███████╗
 ╚═╝  ╚═╝╚═╝     ╚═╝       ╚═╝   ╚═╝  ╚═╝╚══════╝╚══════╝
-GitHub:https://github.com/Ender-g/api-tree
+GitHub: https://github.com/Abyss-PlayerEG/api-tree
 """
 
 
@@ -28,10 +28,24 @@ def get_version() -> str:
         return str(globals()["__version__"])
     # Package: import from _version module
     try:
-        from src._version import __version__
+        from api_tree._version import __version__
         return str(__version__)
     except ImportError:
         return "DEV"
+
+
+def get_tag() -> str:
+    """
+    获取构建标签
+    Get build tag.
+    """
+    if "__tag__" in globals():
+        return str(globals()["__tag__"])
+    try:
+        from api_tree._version import __tag__
+        return str(__tag__)
+    except ImportError:
+        return "dev"
 
 
 @dataclass
@@ -48,6 +62,8 @@ class Args:
     rag_chunk_size: int = 10  # Number of endpoints per RAG chunk
     init_config: bool = False  # Generate default config file
     show_config: bool = False  # Show current config
+    update: bool = False       # Execute update
+    update_check: bool = False # Check for updates only
 
 
 HELP_TEXT = ""
@@ -64,7 +80,7 @@ def get_help_text() -> str:
         return doc.__doc__.strip()
     # Package: read from main.py
     try:
-        from src.main import __doc__
+        from api_tree.main import __doc__
         if __doc__:
             return __doc__.strip()
     except ImportError:
@@ -119,13 +135,19 @@ def parse_args(argv: list[str] | None = None) -> Args:
         elif argv[i] == "--show-config":
             args.show_config = True
             i += 1
+        elif argv[i] == "update":
+            args.update = True
+            i += 1
+            if i < len(argv) and argv[i] == "--check":
+                args.update_check = True
+                i += 1
         elif argv[i] in ("-h", "--help"):
             print(get_help_text())
             sys.exit(0)
         elif argv[i] in ("-v", "--version"):
             for line in BANNER.splitlines():
                 print(f"\t{line}")
-            print(f"\tVersion: {get_version()}\n")
+            print(f"\tVersion: {get_version()}  Tag: {get_tag()}\n")
             sys.exit(0)
         elif argv[i].startswith("-"):
             print(f"Error: Unknown option '{argv[i]}'", file=sys.stderr)

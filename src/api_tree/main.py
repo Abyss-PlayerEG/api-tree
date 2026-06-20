@@ -13,10 +13,12 @@ Usage:
     api-tree --rag-chunk-size 20      # Endpoints per RAG chunk (default: 10)
     api-tree --init-config            # Generate default config file
     api-tree --show-config            # Show current config
+    api-tree update                   # Update to latest version
+    api-tree update --check           # Check for updates (no install)
     api-tree -v, --version            # Show version
     api-tree -h, --help               # Show help
 
-GitHub: https://github.com/Ender-g/api-tree
+GitHub: https://github.com/Abyss-PlayerEG/api-tree
 
 """
 
@@ -32,7 +34,7 @@ os.environ.setdefault('PYTHONIOENCODING', 'utf-8')
 # Add project root to search path to ensure src package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.app import main
+from api_tree.app import main
 
 if __name__ == "__main__":
     main()

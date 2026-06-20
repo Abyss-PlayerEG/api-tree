@@ -30,22 +30,37 @@ rm -rf build dist
 # Generate version from current date (yy.mm.dd.hhmm)
 VERSION=$(date +%y.%m.%d.%H%M)
 
-# Optional version prefix
-read -rp "Version prefix (Enter to skip): " PREFIX
-if [[ -n "$PREFIX" ]]; then
-    VERSION="${PREFIX}-${VERSION}"
+# Optional version prefix or test-build
+if [[ "${1:-}" == "test-build" ]]; then
+    VERSION="01.01.01.0001"
+    echo "  Test build mode: version=${VERSION}"
+    echo ""
+else
+    read -rp "Version prefix (Enter to skip): " PREFIX
+    if [[ -n "$PREFIX" ]]; then
+        VERSION="${PREFIX}-${VERSION}"
+    fi
 fi
 
 # Generate single-file version
 echo "[1.5/4] Generating single-file api-tree-${VERSION}.py..."
-uv run python src/tools/merge_src.py "$VERSION"
+uv run python src/api_tree/tools/merge_src.py "$VERSION" --tag python-script
+
+# Regenerate _version.py with platform tag for PyInstaller
+ARCHIVE=$(uname -s | tr '[:upper:]' '[:lower:]')
+case "$ARCHIVE" in
+    darwin) PLATFORM_TAG="macos-zip" ;;
+    *)      PLATFORM_TAG="${ARCHIVE}-zip" ;;
+esac
+echo "[1.6/4] Regenerating _version.py with tag=${PLATFORM_TAG}..."
+uv run python src/api_tree/tools/merge_src.py "$VERSION" --tag "$PLATFORM_TAG" --version-only
 
 # Run PyInstaller via uv (onedir for fast startup)
 echo "[2/4] Building executable..."
-uv run pyinstaller --onedir --name api-tree --clean --noconfirm --strip --icon=icon.ico src/main.py
+uv run pyinstaller --onedir --name api-tree --clean --noconfirm --strip --icon=icon.ico src/api_tree/main.py
 
 # Cleanup build-time version file
-rm -f src/_version.py
+rm -f src/api_tree/_version.py
 
 # Show result
 echo "[3/4] Build complete."
@@ -57,14 +72,13 @@ else
     echo "  [WARNING] Output file not found."
 fi
 
+# Copy install/uninstall scripts to dist
+cp src/api_tree/installer/macOS/install.sh dist/api-tree/
+cp src/api_tree/installer/macOS/uninstall.sh dist/api-tree/
+chmod +x dist/api-tree/install.sh dist/api-tree/uninstall.sh
+
 # Create zip archive
-ARCHIVE=$(uname -s | tr '[:upper:]' '[:lower:]')
-case "$ARCHIVE" in
-    darwin) PLATFORM="macos" ;;
-    linux)  PLATFORM="linux" ;;
-    *)      PLATFORM="$ARCHIVE" ;;
-esac
-ZIP_NAME="api-tree-${VERSION}-${PLATFORM}.zip"
+ZIP_NAME="api-tree-${VERSION}-${PLATFORM_TAG}.zip"
 if [[ -f "dist/${ZIP_NAME}" ]]; then
     rm -f "dist/${ZIP_NAME}"
 fi

@@ -17,4 +17,4 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Done. Run with: uv run python src/main.py
+echo Done. Run with: uv run python src/api_tree/main.py

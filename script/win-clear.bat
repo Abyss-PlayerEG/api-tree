@@ -11,9 +11,9 @@ if exist dist (
     rmdir /s /q dist
     echo   Removed dist/
 )
-if exist src\_version.py (
-    del src\_version.py
-    echo   Removed src\_version.py
+if exist src\api_tree\_version.py (
+    del src\api_tree\_version.py
+    echo   Removed src\api_tree\_version.py
 )
 
 echo Done.

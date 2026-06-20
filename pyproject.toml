@@ -1,16 +1,26 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "api-tree"
 version = "0.1.0"
-description = "Add your description here"
+description = "Fetch OpenAPI route information and print as a tree structure"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
+
+[project.scripts]
+api-tree = "api_tree.main:main"
 
 [dependency-groups]
 dev = [
     "pyinstaller>=6.20.0",
     "mypy>=1.19.0",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/api_tree"]
 
 [tool.mypy]
 python_version = "3.14"
@@ -25,5 +35,5 @@ warn_unused_ignores = true
 warn_no_return = true
 
 [[tool.mypy.overrides]]
-module = "src._version"
+module = "api_tree._version"
 ignore_missing_imports = true
