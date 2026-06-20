@@ -111,6 +111,15 @@ api-tree --init-config                # 產生 ~/.config/api-tree/config.json
 api-tree --show-config                # 檢視目前設定
 ```
 
+### 更新
+
+```bash
+api-tree update --check               # 檢查新版本（不安裝）
+api-tree update                       # 下載並安裝最新版本
+```
+
+支援單檔 `.py`、macOS zip、Windows zip 和 Windows 安裝包。下載自動校驗 SHA256，失敗時自動回滾。
+
 設定檔：
 ```json
 {

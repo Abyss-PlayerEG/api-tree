@@ -111,6 +111,15 @@ api-tree --init-config                # Generate ~/.config/api-tree/config.json
 api-tree --show-config                # Show current config
 ```
 
+### Update
+
+```bash
+api-tree update --check               # Check for new version (no install)
+api-tree update                       # Download and install latest version
+```
+
+Supports single-file `.py`, macOS zip, Windows zip, and Windows installer. Downloads are verified with SHA256 and auto-rolled back on failure.
+
 Config file:
 ```json
 {
