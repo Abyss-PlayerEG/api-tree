@@ -126,10 +126,9 @@ def detect_install_type() -> str:
     if tag == "macos-zip":
         return "macos"
     if tag == "win64-zip":
-        install_dir = Path(os.environ.get("LOCALAPPDATA", "")) / "api-tree"
-        if (install_dir / "unins000.exe").exists():
-            return "win64-setup"
         return "win64"
+    if tag == "win64-setup":
+        return "win64-setup"
     return "unknown"
 
 
