@@ -4,6 +4,7 @@ Tree structure building and traversal utilities.
 """
 
 from typing import TypedDict, NotRequired
+from .search import match_search
 
 
 class EndpointDict(TypedDict):
@@ -103,9 +104,9 @@ def count_matching_endpoints(node: TreeNode, search: str) -> int:
     """
     count = 0
     for ep in node["endpoints"]:
-        if (search in ep["path_lower"]
-                or search in ep["summary_lower"]
-                or search in ep["method_lower"]):
+        if (match_search(ep["path_lower"], search)
+                or match_search(ep["summary_lower"], search)
+                or match_search(ep["method_lower"], search)):
             count += 1
     for child in node["children"].values():
         count += count_matching_endpoints(child, search)
@@ -129,15 +130,14 @@ class TreeMatcher:
             return self._match_cache[nid]
         result = False
         for ep in node["endpoints"]:
-            if (self._search in ep["path_lower"]
-                    or self._search in ep["summary_lower"]
-                    or self._search in ep["method_lower"]):
+            if (match_search(ep["path_lower"], self._search)
+                    or match_search(ep["summary_lower"], self._search)
+                    or match_search(ep["method_lower"], self._search)):
                 result = True
                 break
-        if not result:
-            for child in node["children"].values():
-                if self._match(child):
-                    result = True
+        for child in node["children"].values():
+            if self._match(child):
+                result = True
         self._match_cache[nid] = result
         return result
     
@@ -198,9 +198,9 @@ def _matches(node: TreeNode, keyword: str) -> bool:
     Check if node or its subtree contains keyword.
     """
     for ep in node["endpoints"]:
-        if (keyword in ep["path_lower"]
-                or keyword in ep["summary_lower"]
-                or keyword in ep["method_lower"]):
+        if (match_search(ep["path_lower"], keyword)
+                or match_search(ep["summary_lower"], keyword)
+                or match_search(ep["method_lower"], keyword)):
             return True
     for child in node["children"].values():
         if _matches(child, keyword):

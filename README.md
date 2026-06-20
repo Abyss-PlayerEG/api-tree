@@ -31,6 +31,12 @@ A lightweight CLI tool that renders OpenAPI (Swagger) specifications as beautifu
 
 Download from [GitHub Releases](https://github.com/Abyss-PlayerEG/api-tree/releases) — no Python required.
 
+**macOS**: If you see "api-tree cannot be opened because the developer cannot be verified", run:
+```bash
+xattr -cr /path/to/api-tree
+```
+Or right-click the binary → Open → Open Anyway.
+
 ### Build from source
 
 ```bash

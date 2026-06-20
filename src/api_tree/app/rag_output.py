@@ -6,6 +6,7 @@ RAG-optimized output for vector database knowledge base.
 import json
 
 from .tree import sort_children, TreeMatcher, TreeNode, EndpointDict
+from .search import match_search
 
 
 def generate_rag_output(
@@ -171,9 +172,9 @@ def _collect_endpoints_with_context(
     # Filter endpoints if searching
     if search and eps:
         eps = [ep for ep in eps if (
-                search in ep["path_lower"]
-                or search in ep["summary_lower"]
-                or search in ep["method_lower"]
+                match_search(ep["path_lower"], search)
+                or match_search(ep["summary_lower"], search)
+                or match_search(ep["method_lower"], search)
         )]
     
     # Single child chain merge (only when no own endpoints)
@@ -266,9 +267,9 @@ def _matches_search(node: TreeNode, search: str) -> bool:
     Check if node or its subtree matches search keyword.
     """
     for ep in node["endpoints"]:
-        if (search in ep["path_lower"]
-                or search in ep["summary_lower"]
-                or search in ep["method_lower"]):
+        if (match_search(ep["path_lower"], search)
+                or match_search(ep["summary_lower"], search)
+                or match_search(ep["method_lower"], search)):
             return True
     for child in node["children"].values():
         if _matches_search(child, search):

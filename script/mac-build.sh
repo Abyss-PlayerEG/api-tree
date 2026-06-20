@@ -49,8 +49,8 @@ uv run python src/api_tree/tools/merge_src.py "$VERSION" --tag python-script
 # Regenerate _version.py with platform tag for PyInstaller
 ARCHIVE=$(uname -s | tr '[:upper:]' '[:lower:]')
 case "$ARCHIVE" in
-    darwin) PLATFORM_TAG="macos-zip" ;;
-    *)      PLATFORM_TAG="${ARCHIVE}-zip" ;;
+    darwin) PLATFORM_TAG="macos-zip"; PLATFORM_NAME="macos" ;;
+    *)      PLATFORM_TAG="${ARCHIVE}-zip"; PLATFORM_NAME="${ARCHIVE}" ;;
 esac
 echo "[1.6/4] Regenerating _version.py with tag=${PLATFORM_TAG}..."
 uv run python src/api_tree/tools/merge_src.py "$VERSION" --tag "$PLATFORM_TAG" --version-only
@@ -78,7 +78,7 @@ cp src/api_tree/installer/macOS/uninstall.sh dist/api-tree/
 chmod +x dist/api-tree/install.sh dist/api-tree/uninstall.sh
 
 # Create zip archive
-ZIP_NAME="api-tree-${VERSION}-${PLATFORM_TAG}.zip"
+ZIP_NAME="api-tree-${VERSION}-${PLATFORM_NAME}.zip"
 if [[ -f "dist/${ZIP_NAME}" ]]; then
     rm -f "dist/${ZIP_NAME}"
 fi

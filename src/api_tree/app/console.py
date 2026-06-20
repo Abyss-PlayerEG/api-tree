@@ -5,6 +5,7 @@ Console output for API tree.
 
 from .color import Color
 from .tree import sort_children, TreeMatcher, _matches, _leaf_name, _leaf_name_no_search, TreeNode, EndpointDict
+from .search import match_search
 
 
 def print_tree(
@@ -33,9 +34,9 @@ def print_tree(
         matched = (matcher.matches(node) if matcher else _matches(node, search))
         if not matched and extra_eps:
             matched = any(
-                search in ep["path_lower"]
-                or search in ep["summary_lower"]
-                or search in ep["method_lower"]
+                match_search(ep["path_lower"], search)
+                or match_search(ep["summary_lower"], search)
+                or match_search(ep["method_lower"], search)
                 for ep in extra_eps
             )
         if not matched:
@@ -73,9 +74,9 @@ def print_tree(
     # Search mode: only show matching endpoints
     if search and eps:
         eps = [ep for ep in eps if (
-                search in ep["path_lower"]
-                or search in ep["summary_lower"]
-                or search in ep["method_lower"]
+                match_search(ep["path_lower"], search)
+                or match_search(ep["summary_lower"], search)
+                or match_search(ep["method_lower"], search)
         )]
     
     display_name = f"{path_accum}/{name}" if path_accum else name
