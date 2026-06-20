@@ -349,15 +349,16 @@ def _replace_zip(asset_url: str, sha256: str | None, file_size: int = 0) -> bool
 
 
 def _replace_win64_setup(asset_url: str, sha256: str | None, file_size: int = 0) -> bool:
-    with tempfile.TemporaryDirectory() as tmp:
-        exe_path = Path(tmp) / "update-setup.exe"
-        if not _download(asset_url, exe_path, sha256, file_size):
-            return False
-        print(f"Launching installer: {exe_path}")
-        if sys.platform == "win32":
-            os.startfile(str(exe_path))
-        else:
-            subprocess.Popen([str(exe_path)])
+    tmp = tempfile.mkdtemp()
+    exe_path = Path(tmp) / "update-setup.exe"
+    if not _download(asset_url, exe_path, sha256, file_size):
+        shutil.rmtree(tmp, ignore_errors=True)
+        return False
+    print(f"Launching installer: {exe_path}")
+    if sys.platform == "win32":
+        os.startfile(str(exe_path))
+    else:
+        subprocess.Popen([str(exe_path)])
     return True
 
 
