@@ -7,6 +7,7 @@ from datetime import datetime
 
 from .config import config
 from .tree import sort_children, _leaf_name_no_search, TreeMatcher, TreeNode, EndpointDict
+from .search import match_search
 
 
 def _escape(text: str) -> str:
@@ -42,9 +43,9 @@ def render_html_tree(node: TreeNode, title: str, total: int, search: str = "") -
             matched = matcher.matches(n)
             if not matched and extra_eps:
                 matched = any(
-                    search in ep["path_lower"]
-                    or search in ep["summary_lower"]
-                    or search in ep["method_lower"]
+                    match_search(ep["path_lower"], search)
+                    or match_search(ep["summary_lower"], search)
+                    or match_search(ep["method_lower"], search)
                     for ep in extra_eps
                 )
             if not matched:
@@ -71,9 +72,9 @@ def render_html_tree(node: TreeNode, title: str, total: int, search: str = "") -
 
         if search and eps:
             eps = [ep for ep in eps if (
-                search in ep["path_lower"]
-                or search in ep["summary_lower"]
-                or search in ep["method_lower"]
+                match_search(ep["path_lower"], search)
+                or match_search(ep["summary_lower"], search)
+                or match_search(ep["method_lower"], search)
             )]
 
         display = f"{path_acc}/{name}" if path_acc else name

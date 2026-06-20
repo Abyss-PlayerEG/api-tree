@@ -31,6 +31,12 @@
 
 从 [GitHub Releases](https://github.com/Abyss-PlayerEG/api-tree/releases) 下载，无需 Python 环境。
 
+**macOS**: 如果提示“无法打开，因为无法验证开发者”，请运行：
+```bash
+xattr -cr /path/to/api-tree
+```
+或右键点击应用 → 打开 → 仍然打开。
+
 ### 从源码构建
 
 ```bash
