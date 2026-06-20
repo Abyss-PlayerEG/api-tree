@@ -78,6 +78,17 @@ api-tree -s auth                      # Search endpoints containing 'auth'
 api-tree --html                       # Export as HTML
 ```
 
+### Regex Search
+
+Use `$:{pattern}` syntax with `-s` flag for regex matching:
+
+```bash
+api-tree -s '$:{user|pet}'            # Match "user" or "pet"
+api-tree -s '$:{^/api/v1}'            # Paths starting with /api/v1
+api-tree -s '$:{GET|POST}'            # Match GET or POST methods
+api-tree -s '$:{create|update}'       # Match create or update
+```
+
 > If the URL has no path (e.g. `http://localhost:9090`), the tool auto-appends `/v3/api-docs`. To use a different endpoint, specify the full URL directly.
 
 ### Agent Output (for AI-assisted development)

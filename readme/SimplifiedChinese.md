@@ -78,6 +78,17 @@ api-tree -s auth                      # 搜索含 "auth" 的接口
 api-tree --html                       # 导出 HTML
 ```
 
+### 正则搜索
+
+使用 `$:{pattern}` 语法配合 `-s` 参数进行正则匹配：
+
+```bash
+api-tree -s '$:{user|pet}'            # 匹配 "user" 或 "pet"
+api-tree -s '$:{^/api/v1}'            # 以 /api/v1 开头的路径
+api-tree -s '$:{GET|POST}'            # 匹配 GET 或 POST 方法
+api-tree -s '$:{create|update}'       # 匹配 create 或 update
+```
+
 > 如果 URL 不含路径（如 `http://localhost:9090`），工具会自动追加 `/v3/api-docs`。若接口文档在其他路径，请直接指定完整 URL。
 
 ### Agent 输出（AI 辅助开发）
