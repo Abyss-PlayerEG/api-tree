@@ -11,6 +11,8 @@ import urllib.request
 from typing import Any
 from urllib.parse import urlparse
 
+from .updater import _get_ssl_context
+
 
 def fetch_openapi(source: str) -> dict[str, Any]:
     """
@@ -29,7 +31,9 @@ def fetch_openapi(source: str) -> dict[str, Any]:
         url = source.rstrip("/") + "/v3/api-docs"
 
     try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
+        ctx = _get_ssl_context()
+        req = urllib.request.Request(url, headers={"User-Agent": "api-tree"})
+        with urllib.request.urlopen(req, timeout=10, context=ctx) as resp:
             return json.loads(resp.read().decode("utf-8"))  # type: ignore[no-any-return]
     except (urllib.error.URLError, ValueError) as e:
         reason = getattr(e, 'reason', str(e))
